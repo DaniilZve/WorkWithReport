@@ -1,0 +1,57 @@
+0: reserved -> 11111 Kuznetsov Alexey Viktorovich Mercedes C300
+1: reserved -> 22222 Smirnov Dmitry Olegovich Volkswagen Passat
+2: Empty 
+3: Empty 
+4: reserved -> 12345 Ivanov Ivan Ivanovich Toyota Camry
+5: reserved -> 33333 Popov Nikolay Andreevich Honda Accord
+6: Empty 
+7: Empty 
+8: Empty 
+9: reserved -> 66666 Mikhailov Denis Vladimirovich Hyundai Elantra
+10: Empty 
+11: Empty 
+12: Empty 
+13: Empty 
+14: reserved -> 44444 Volkov Andrey Sergeevich Ford Focus
+15: reserved -> 10101 Stepanov Viktor Olegovich Tesla Model3
+16: Empty 
+17: reserved -> 77777 Lebedev Kirill Romanovich Kia Optima
+18: Empty 
+19: Empty 
+20: reserved -> 88990 Nikitin Igor Andreevich Peugeot 508
+21: Empty 
+22: Empty 
+23: Empty 
+24: Empty 
+25: Empty 
+26: reserved -> 12121 Zviryansky Daniil Aleksandrovich Toyota Samidi
+27: reserved -> 99001 Zakharov Denis Sergeevich Renault Megane
+28: Empty 
+29: Empty 
+30: reserved -> 55555 Fedorov Maxim Igorevich Nissan Altima
+31: reserved -> 77889 Orlov Anton Sergeevich Chevrolet Malibu
+32: Empty 
+33: Empty 
+34: Empty 
+35: reserved -> 67890 Sidorov Sergey Sergeevich Audi A6
+36: Empty 
+37: Empty 
+38: Empty 
+39: reserved -> 99999 Egorov Artem Alexandrovich Mazda 6
+40: reserved -> 88888 Semenov Pavel Dmitrievich Skoda Octavia
+12345 Ivanov Ivan Ivanovich Toyota Camry
+67890 Sidorov Sergey Sergeevich Audi A6
+11111 Kuznetsov Alexey Viktorovich Mercedes C300
+22222 Smirnov Dmitry Olegovich Volkswagen Passat
+33333 Popov Nikolay Andreevich Honda Accord
+44444 Volkov Andrey Sergeevich Ford Focus
+55555 Fedorov Maxim Igorevich Nissan Altima
+66666 Mikhailov Denis Vladimirovich Hyundai Elantra
+77777 Lebedev Kirill Romanovich Kia Optima
+88888 Semenov Pavel Dmitrievich Skoda Octavia
+99999 Egorov Artem Alexandrovich Mazda 6
+10101 Stepanov Viktor Olegovich Tesla Model3
+77889 Orlov Anton Sergeevich Chevrolet Malibu
+88990 Nikitin Igor Andreevich Peugeot 508
+99001 Zakharov Denis Sergeevich Renault Megane
+12121 Zviryansky Daniil Aleksandrovich Toyota Samidi

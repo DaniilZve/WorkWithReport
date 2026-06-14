@@ -1,0 +1,4 @@
+﻿   Qt/MSBuild: 3.5.0.0
+   Qt: 6.11.1
+  mainwindow.cpp
+  ReportsApplication.vcxproj -> D:\Курсовой проект\ReportsApplication\x64\Debug\ReportsApplication.exe

@@ -1,0 +1,16 @@
+12345 Ivanov Ivan Ivanovich Toyota Camry
+67890 Sidorov Sergey Sergeevich Audi A6
+11111 Kuznetsov Alexey Viktorovich Mercedes C300
+22222 Smirnov Dmitry Olegovich Volkswagen Passat
+33333 Popov Nikolay Andreevich Honda Accord
+44444 Volkov Andrey Sergeevich Ford Focus
+55555 Fedorov Maxim Igorevich Nissan Altima
+66666 Mikhailov Denis Vladimirovich Hyundai Elantra
+77777 Lebedev Kirill Romanovich Kia Optima
+88888 Semenov Pavel Dmitrievich Skoda Octavia
+99999 Egorov Artem Alexandrovich Mazda 6
+10101 Stepanov Viktor Olegovich Tesla Model3
+77889 Orlov Anton Sergeevich Chevrolet Malibu
+88990 Nikitin Igor Andreevich Peugeot 508
+99001 Zakharov Denis Sergeevich Renault Megane
+12121 Zviryansky Daniil Aleksandrovich Toyota Samidi
