@@ -8,7 +8,7 @@
 #include <sstream>
 
 
-// =================== ВВОД КУРЬЕРА ===================
+//ВВОД КУРЬЕРА
 CourierInputDialog::CourierInputDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("Данные курьера");
     resize(420, 150);
@@ -21,7 +21,7 @@ CourierInputDialog::CourierInputDialog(QWidget* parent) : QDialog(parent) {
     formLayout->addRow("Номер пропуска:", passEdit);
 
     fioEdit = new QLineEdit(this);
-    fioEdit->setPlaceholderText("Иванов Иван Иванович (на латинице)");
+    fioEdit->setPlaceholderText("Ivanov Ivan Ivanovich (на латинице)");
     formLayout->addRow("ФИО (через пробел):", fioEdit);
 
     tsEdit = new QLineEdit(this);
@@ -36,7 +36,8 @@ CourierInputDialog::CourierInputDialog(QWidget* parent) : QDialog(parent) {
 
 QString CourierInputDialog::getInputString() const {
     // Собираем в единую строку через пробелы для передачи в CheckInputCourier
-    return QString("%1 %2 %3").arg(passEdit->text().trimmed())
+    return QString("%1 %2 %3")
+        .arg(passEdit->text().trimmed())
         .arg(fioEdit->text().trimmed())
         .arg(tsEdit->text().trimmed());
 }
@@ -45,7 +46,7 @@ QString CourierInputDialog::getInputString() const {
 
 
 
-// =================== ВВОД ЗАКАЗА ===================
+//ВВОД ЗАКАЗА
 OrderInputDialog::OrderInputDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("Данные заказа");
     resize(420, 170);
@@ -86,7 +87,7 @@ QString OrderInputDialog::getInputString() const {
         .arg(priceEdit->text().trimmed());
 }
 
-// =================== ФИЛЬТРЫ ОТЧЕТА ===================
+// ФИЛЬТРЫ ОТЧЕТА 
 ReportFilterDialog::ReportFilterDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("Параметры формирования отчёта");
     setModal(true);
@@ -102,21 +103,20 @@ ReportFilterDialog::ReportFilterDialog(QWidget* parent) : QDialog(parent) {
     streetEdit = new QLineEdit(this); streetEdit->setPlaceholderText("Permskaya");
     houseEdit = new QLineEdit(this); houseEdit->setPlaceholderText("12");
 
-    // Блок ФИО (Новое!)
+    // Блок ФИО
     surnameEdit = new QLineEdit(this); surnameEdit->setPlaceholderText("Иванов");
     nameEdit = new QLineEdit(this); nameEdit->setPlaceholderText("Иван");
     patronymicEdit = new QLineEdit(this); patronymicEdit->setPlaceholderText("Иванович");
 
-    //formLayout->addRow("--- Дата заказа ---");
     formLayout->addRow("День (DD):", dayEdit);
     formLayout->addRow("Месяц (3 буквы):", monthEdit);
     formLayout->addRow("Год (YYYY):", yearEdit);
 
-    //formLayout->addRow("--- Адрес заказа ---");
+  
     formLayout->addRow("Улица:", streetEdit);
     formLayout->addRow("Дом:", houseEdit);
 
-    //formLayout->addRow("--- ФИО Курьера (Фильтр) ---");
+    
     formLayout->addRow("Фамилия:", surnameEdit);
     formLayout->addRow("Имя:", nameEdit);
     formLayout->addRow("Отчество:", patronymicEdit);
@@ -145,7 +145,7 @@ QString ReportFilterDialog::getFioString() const {
 }
 
 
-// =================== ОКНО ОТЧЕТА ===================
+//ОКНО ОТЧЕТА
 ReportWindow::ReportWindow(ReportTree* reportTree, QWidget* parent)
     : QDialog(parent) {
     setWindowTitle("Сформированный отчёт (Текстовый вид)");

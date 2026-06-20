@@ -74,4 +74,4 @@ private:
     QPlainTextEdit* reportTextEdit; // Текстовое поле для вывода данных как в файле
 };
 
-#endif // DIALOGS_H
+#endif 

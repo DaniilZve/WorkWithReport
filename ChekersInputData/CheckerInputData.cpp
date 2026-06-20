@@ -123,9 +123,13 @@ std::pair <DataOrder, std::string> CheckInputOrder(std::istream& in)
     }
     elem.date.d = std::stoi(dayStr);
     elem.date.y = std::stoi(yearStr);
-    if ((elem.date.d == 0) || (elem.date.y == 0))
+    if ((elem.date.d < 1) || (elem.date.d > 31))
     {
-        return { elem, "Ошибка в записи даты. День или год не могут быть равны 0"};
+        return { elem, "Ошибка в записи даты. День должен находиться в диапазоне от 1 до 31" };
+    }
+    if ((elem.date.y < 1990) || (elem.date.y > 2026))
+    {
+        return { elem, "Ошибка в записи даты. Год должен находиться в диапазоне от 1990 до 2026" };
     }
     std::map<std::string, int> months = {
         {"jan", 1}, {"feb", 2}, {"mar", 3},
@@ -200,6 +204,19 @@ std::pair <DataCourier, std::string> CheckInputCourier(std::istream& in) {
         return { elem, "Ошибка в записи марки машины. Проверьте, чтобы марка была записана латинскими символами с заглавной буквы"};
     }
     //Модель
+    // не русские
+    for (size_t i = 0; i < elem.transp.model.size(); i++) {
+        unsigned char c = elem.transp.model[i];
+        if (!(c >= 'A' && c <= 'Z')) {
+            if (!(c >= 'a' && c <= 'z'))
+            {
+                if (!(c >= '0' && c <= '9'))
+                {
+                    return { elem, "Ошибка в модели машины. В модели не может быть букв русского алфавита" };
+                }
+            }
+        }
+    }
     if (elem.transp.model.empty())
     {
         return { elem, "Ошибка в модели машины. Модель отсутствует" };
@@ -209,6 +226,7 @@ std::pair <DataCourier, std::string> CheckInputCourier(std::istream& in) {
 
 
 }
+
 
 std::pair <Filters, std::string> CheckInputFilters(std::istream& in)
 {
@@ -230,9 +248,13 @@ std::pair <Filters, std::string> CheckInputFilters(std::istream& in)
     }
     elem.date.d = std::stoi(dayStr);
     elem.date.y = std::stoi(yearStr);
-    if ((elem.date.d == 0) || (elem.date.y == 0))
+    if ((elem.date.d < 1) || (elem.date.d > 31))
     {
-        return { elem, "Ошибка в записи даты. День или год не могут быть равны 0" };
+        return { elem, "Ошибка в записи даты. День должен находиться в диапазоне от 1 до 31"};
+    }
+    if ((elem.date.y < 1990) || (elem.date.y > 2026))
+    {
+        return { elem, "Ошибка в записи даты. Год должен находиться в диапазоне от 1990 до 2026"};
     }
     std::map<std::string, int> months = {
         {"jan", 1}, {"feb", 2}, {"mar", 3},
@@ -248,14 +270,15 @@ std::pair <Filters, std::string> CheckInputFilters(std::istream& in)
         NewDate = -1; // если не найдено
     if (NewDate == -1)
     {
-        return { elem, "Ошибка в записи даты.Проверьте месяц." };
+        return { elem, "Ошибка в записи даты. Проверьте месяц, он должен быт в сдедующем виде: jun, oct, feb и т.п." };
     }
 
     // Адрес
-    if (!RegisterCheck(elem.adres.street))
+    if (!RegisterCheck(streetStr))
     {
         return { elem, "Ошибка в записи адреса(улица).Проверьте чтобы улица была записана латинскими символами с заглавной буквы" };
     }
+    elem.adres.street = streetStr;
 
     if (!isNatural(houseStr))
     {
@@ -268,19 +291,21 @@ std::pair <Filters, std::string> CheckInputFilters(std::istream& in)
     }
 
     // ФИО
-    if (!RegisterCheck(elem.fio.f))
+    if (!RegisterCheck(fStr))
     {
         return { elem, "Ошибка в записи ФИО. Проверьте, чтобы фамилия была записана латинскими символами с заглавной буквы" };
     }
-    if (!RegisterCheck(elem.fio.i))
+    elem.fio.f = fStr;
+    if (!RegisterCheck(iStr))
     {
         return { elem, "Ошибка в записи ФИО. Проверьте, чтобы имя было записано латинскими символами с заглавной буквы"  };
     }
-    if (!RegisterCheck(elem.fio.o))
+    elem.fio.i = iStr;
+    if (!RegisterCheck(oStr))
     {
         return { elem, "Ошибка в записи ФИО. Проверьте, чтобы отчество было записано латинскими символами с заглавной буквы" };
     }
-
+    elem.fio.o = oStr;
     return { elem, ""};
 
 

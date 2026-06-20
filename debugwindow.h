@@ -26,4 +26,4 @@ private:
     QGraphicsScene* treeScene;
 };
 
-#endif // DEBUGWINDOW_H
+#endif 

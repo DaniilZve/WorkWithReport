@@ -1,6 +1,5 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-
 #include <QMainWindow>
 #include <QTableWidget>
 #include <QTextEdit>
@@ -8,7 +7,6 @@
 #include <QMenuBar>
 #include <QAction>
 #include <QSplitter>
-
 #include "Stracts/Stracts.h"
 #include "ScrHashTable/HashTable.h"
 #include "ScrMainAVLTree/MainTree.h"
@@ -59,4 +57,4 @@ private:
     ReportTree* reportTree;
 };
 
-#endif // MAINWINDOW_H
+#endif 

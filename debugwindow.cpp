@@ -1,4 +1,3 @@
-// debugwindow.cpp
 #include "debugwindow.h"
 #include <QGraphicsTextItem>
 #include <QGraphicsEllipseItem>
@@ -14,7 +13,7 @@ DebugWindow::DebugWindow(QWidget* parent) : QWidget(parent, Qt::Window) {
     QVBoxLayout* layout = new QVBoxLayout(this);
     QSplitter* splitter = new QSplitter(Qt::Horizontal, this);
 
-    // Устанавливаем 5 столбцов вместо 4
+    
     hashTableWidget = new QTableWidget(0, 5, this);
     hashTableWidget->setHorizontalHeaderLabels({
         "Статус",
@@ -40,7 +39,7 @@ void DebugWindow::updateViews(HashTable* hTable, MainTree* mTree) {
             int row = hashTableWidget->rowCount();
             hashTableWidget->insertRow(row);
 
-            // Обращаемся напрямую к ячейке (Table в HashTable - public)
+           
             auto cell = hTable->Table[i];
 
             // Базовые значения (статус выводим всегда, остальное по умолчанию "-")
@@ -51,10 +50,10 @@ void DebugWindow::updateViews(HashTable* hTable, MainTree* mTree) {
             QString indexStr = "-";
 
             // Если статус OCCUPIED (1) или DELETED (2), то в ячейке есть осмысленные данные
-            if (cell->state != 0 /* EMPTY */) {
+            if (cell->state != 0 ) {
                 // Первичный хеш вычисляем вручную: ключ % размер таблицы
                 primaryHashStr = QString::number(cell->key % hTable->MaxSizeArr);
-                keyStr = QString::number(cell->key);
+                keyStr = QString::number(cell->key).rightJustified(5, '0');
                 indexStr = QString::number(cell->index);
             }
 
@@ -88,7 +87,7 @@ void DebugWindow::drawTree(NodeMainTree* node, int x, int y, int hSpacing) {
     }
 
     // Формирование текста: Ключ + Цепочка индексов
-    QString nodeText = QString::number(node->key) + "\n[";
+    QString nodeText = QString::number(node->key).rightJustified(5, '0') + "\n[";
     NodeList* p = node->IndexList->h;
     if (p) {
         do {
