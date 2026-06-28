@@ -19,7 +19,9 @@ public:
     void updateViews(HashTable* hTable, MainTree* mTree);
 
 private:
-    void drawTree(NodeMainTree* node, int x, int y, int hSpacing);
+    void displayTree(BaseNode* root);
+    void calculatePositions(BaseNode* node, int depth, int& x_counter, int x_spacing, int y_spacing, QMap<BaseNode*, QPointF>& positions);
+    void drawTreeElements(BaseNode* node, const QMap<BaseNode*, QPointF>& positions);
 
     QTableWidget* hashTableWidget;
     QGraphicsView* treeView;

@@ -17,28 +17,23 @@ class HashTable
 {
 private:
 	MainTree* OrderTree;
-	bool AddInTable(DataCourier& data);
-	bool DelInTable(DataCourier& data);
-	bool CheckUnikKey(unsigned int& key1, unsigned int& key2);
-	bool isPrimeOptimized(size_t n);
-	int HashFunction(const unsigned int& key);
-	int HashFunction2(int& n, int& j);
-	int ResolveCollis(int OriginalInd, int j);
-public:
-	Cell** Table;
-	DataCourier** CourierArr;
-	size_t SizeArr;
 	size_t MaxSizeArr;
 	int NumElem;
-	HashTable (size_t Size);
+	Cell** Table;
+	DataCourier** CourierArr;
+	int HashFunction(unsigned int& key);
+	int HashFunction2(unsigned int& n, int& j);
+	std::pair<int, int> ResolveCollisions(unsigned int& key, bool findForInsert = false);
+
+public:
+	size_t GetMaxSizeArr();
+	int GetNumElem();
+	Cell* GetCellTable(int& i);
+	DataCourier* GetCellCourierArr(int& i);
+	HashTable (size_t& Size);
 	~HashTable();
 	void SetOrderTree(MainTree*);
-	void FillArr(std::ifstream & in);
-	bool AddElemInArr(DataCourier& data);
-	bool DelElemInArr(DataCourier& data);
-	std::pair <Cell*, int> SearchInHashTable(const unsigned int& key);
-	void PrintTable(std::ostream& out);
-	void PrintCourierArr(std::ostream& out);
-	void LogerHashTable(std::string text);
-	void LogerHashTable(std::string text, int num);
+	std::pair <bool, int> AddInTable(DataCourier& data);
+	bool DelInTable(DataCourier& data);
+	std::pair <Cell*, int> SearchInHashTable(unsigned int& key);
 };

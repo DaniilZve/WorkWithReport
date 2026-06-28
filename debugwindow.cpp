@@ -34,13 +34,13 @@ DebugWindow::DebugWindow(QWidget* parent) : QWidget(parent, Qt::Window) {
 void DebugWindow::updateViews(HashTable* hTable, MainTree* mTree) {
     // Обновление хэш таблицы
     hashTableWidget->setRowCount(0);
-    if (hTable && hTable->Table) {
-        for (size_t i = 0; i < hTable->MaxSizeArr; i++) {
+    if (hTable) {
+        for (int i = 0; i < hTable->GetMaxSizeArr(); i++) {
             int row = hashTableWidget->rowCount();
             hashTableWidget->insertRow(row);
 
            
-            auto cell = hTable->Table[i];
+            auto cell = hTable->GetCellTable(i);
 
             // Базовые значения (статус выводим всегда, остальное по умолчанию "-")
             QString stateStr = QString::number(cell->state);
@@ -52,9 +52,9 @@ void DebugWindow::updateViews(HashTable* hTable, MainTree* mTree) {
             // Если статус OCCUPIED (1) или DELETED (2), то в ячейке есть осмысленные данные
             if (cell->state != 0 ) {
                 // Первичный хеш вычисляем вручную: ключ % размер таблицы
-                primaryHashStr = QString::number(cell->key % hTable->MaxSizeArr);
+                primaryHashStr = QString::number(cell->key % hTable->GetMaxSizeArr());
                 keyStr = QString::number(cell->key).rightJustified(5, '0');
-                indexStr = QString::number(cell->index);
+                if (cell->state == 1) indexStr = QString::number(cell->index);
             }
 
             // Заполняем строку таблицы
@@ -69,27 +69,75 @@ void DebugWindow::updateViews(HashTable* hTable, MainTree* mTree) {
     // Обновление дерева
     treeScene->clear();
     if (mTree && mTree->root) {
-        drawTree(mTree->root, 0, 0, 150);
+        displayTree(mTree->root);
     }
 }
 
-void DebugWindow::drawTree(NodeMainTree* node, int x, int y, int hSpacing) {
+
+void DebugWindow::displayTree(BaseNode* root) {
+    treeScene->clear();
+    if (!root) return;
+
+    int x_counter = 0; // Глобальный счетчик шагов по горизонтали
+    int y_spacing = 70; // Расстояние между уровнями (высота этажа)
+    int x_spacing = 65; // Жесткий шаг между соседними по порядку узлами
+
+    // Запускаем сначала только расчет координат для каждого узла
+    // Чтобы нарисовать линии, родителю нужно знать точные координаты детей
+    QMap<BaseNode*, QPointF> nodePositions;
+    calculatePositions(root, 0, x_counter, x_spacing, y_spacing, nodePositions);
+
+    // Теперь, когда координаты всех 100 элементов известны, рисуем их
+    drawTreeElements(root, nodePositions);
+
+    // Автоматически подгоняем размер сцены под получившееся дерево
+    treeScene->setSceneRect(treeScene->itemsBoundingRect());
+}
+
+// Вспомогательный метод: рассчитывает координаты 
+void DebugWindow::calculatePositions(BaseNode* node, int depth, int& x_counter,
+    int x_spacing, int y_spacing,
+    QMap<BaseNode*, QPointF>& positions) {
     if (!node) return;
 
-    // Отрисовка связей
-    if (node->left) {
-        treeScene->addLine(x, y, x - hSpacing, y + 60);
-        drawTree(node->left, x - hSpacing, y + 60, hSpacing / 2);
+    // Сначала уходим в самое левое поддерево
+    calculatePositions(node->left, depth + 1, x_counter, x_spacing, y_spacing, positions);
+
+    // Вычисляем уникальные координаты для текущего узла
+    int currentX = x_counter * x_spacing;
+    int currentY = depth * y_spacing;
+    positions[node] = QPointF(currentX, currentY);
+
+    x_counter++; // Сдвигаем счетчик для следующего по порядку элемента
+
+    // Затем уходим в правое поддерево
+    calculatePositions(node->right, depth + 1, x_counter, x_spacing, y_spacing, positions);
+}
+
+//  Вспомогательный метод: берет готовые координаты и строит графику
+void DebugWindow::drawTreeElements(BaseNode* node, const QMap<BaseNode*, QPointF>& positions) {
+    if (!node || !positions.contains(node)) return;
+
+    QPointF currentPos = positions[node];
+    int x = currentPos.x();
+    int y = currentPos.y();
+
+    // Отрисовка линий к детям
+    if (node->left && positions.contains(node->left)) {
+        QPointF leftPos = positions[node->left];
+        treeScene->addLine(x, y, leftPos.x(), leftPos.y(), QPen(Qt::black, 1));
+        drawTreeElements(node->left, positions);
     }
-    if (node->right) {
-        treeScene->addLine(x, y, x + hSpacing, y + 60);
-        drawTree(node->right, x + hSpacing, y + 60, hSpacing / 2);
+    if (node->right && positions.contains(node->right)) {
+        QPointF rightPos = positions[node->right];
+        treeScene->addLine(x, y, rightPos.x(), rightPos.y(), QPen(Qt::black, 1));
+        drawTreeElements(node->right, positions);
     }
 
-    // Формирование текста: Ключ + Цепочка индексов
-    QString nodeText = QString::number(node->key).rightJustified(5, '0') + "\n[";
-    NodeList* p = node->IndexList->h;
-    if (p) {
+    // Формирование текста (Ключ + Цепочка индексов)
+    QString nodeText = QString::number(node->GetKey()).rightJustified(5, '0') + "\n[";
+    if (node->IndexList && node->IndexList->h) {
+        NodeList* p = node->IndexList->h;
         do {
             nodeText += QString::number(p->Index) + " ";
             p = p->next;
@@ -97,9 +145,22 @@ void DebugWindow::drawTree(NodeMainTree* node, int x, int y, int hSpacing) {
     }
     nodeText += "]";
 
-    // Отрисовка узла
-    QGraphicsEllipseItem* ellipse = treeScene->addEllipse(x - 25, y - 25, 50, 50, QPen(Qt::black), QBrush(Qt::black));
+    // Отрисовка геометрии узла
+    int radius = 33;
+    // Делаем красивый контрастный круг: белая заливка, синяя рамка
+    treeScene->addEllipse(x - radius, y - radius, radius * 2, radius * 2, QPen(QColor("#0055ff"), 2), QBrush(Qt::black));
+
+    // Добавляем текст
     QGraphicsTextItem* text = treeScene->addText(nodeText);
-    text->setPos(x-20, y-20);
+    text->setDefaultTextColor(Qt::white);
+
+    // Принудительно уменьшаем шрифт, чтобы строки не взрывали круги
+    QFont font = text->font();
+    font.setPointSize(7);
+    font.setBold(true);
+    text->setFont(font);
+
+    // Выравниваем текст ровно по центру круга
+    text->setPos(x - 22, y - 18);
 }
 

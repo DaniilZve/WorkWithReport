@@ -1,11 +1,13 @@
-#include "MainTree.h"
-#include"../Stracts//Stracts.h"
+﻿#include "MainTree.h"
 #include"../List/ListTree.h"
 #include"../ScrHashTable/HashTable.h"
 #include"../ChekersInputData/CheckerInputData.h"
 #include <map>
 #include<locale>
 #include<sstream>
+#include"../Stracts/Stracts.h"
+#include <string>
+
 using namespace std;
 bool operator ==(DataOrder& data1, DataOrder& data2)
 {
@@ -16,7 +18,6 @@ bool operator ==(DataOrder& data1, DataOrder& data2)
             (data1.date.y == data2.date.y) &&
             (data1.price == data2.price));
 }
-
 ostream& operator << (ostream& out, DataOrder* data)
 {
     std::string NulDay;
@@ -29,109 +30,196 @@ ostream& operator << (ostream& out, DataOrder* data)
         << " " << data->price << endl;
 
 };
+bool operator ==(FIO& fio1, FIO& fio2)
+{
+    return ((fio1.f == fio2.f) && (fio1.i == fio2.i) && (fio1.o == fio2.o));
+}
+
+bool operator ==(Adres& adres1, Adres& adres2)
+{
+    return ((adres1.house == adres2.house) && (adres1.street == adres2.street));
+}
+
+ostream& operator << (ostream& out, DataReport* data)
+{
+    std::string NulDay;
+
+    if (data->date.d < 10) NulDay = '0';
+    else NulDay = "";
+
+    return out
+        << " " << data->passNum
+        << " " << NulDay << data->date.d << " " << data->date.m << " " << data->date.y
+        << " " << data->adres.street << " " << data->adres.house
+        << " " << data->fio.f << " " << data->fio.i << " " << data->fio.o
+        << " " << data->transp.brand << " " << data->transp.model
+        << " " << data->price << endl;
+};
 
 
 int SummDate(Date& date) {
     return date.y * 10000 + ConvMonToInt(date.m) * 100 + date.d;
 }
-int ConvMonToInt(string& m)
-{
-    map<string, int> months = {
-        {"jan", 1}, {"feb", 2}, {"mar", 3},
-        {"apr", 4}, {"may", 5}, {"jun", 6},
-        {"jul", 7}, {"aug", 8}, {"sep", 9},
-        {"oct", 10}, {"nov", 11}, {"dec", 12}
-    };
 
-    auto it = months.find(m);
-    if (it != months.end())
-        return it->second;
-    return -1; // ���� �� �������
+
+BaseNode::BaseNode() {
+    hight = 1;
+    left = nullptr;
+    right = nullptr;
+    IndexList = new List();
+}
+BaseNode::~BaseNode()
+{
+    delete IndexList;
+}
+
+unsigned int NodeMainTree::GetKey()
+{
+    return this->key;
+}
+void NodeMainTree::SetKey(const unsigned int& newKey)
+{
+    this->key = newKey;
 }
 
 
-
-void MainTree::ResizeArr()
+void MainTree::IncreaseArr()
 {
-    Capacity *= 2;
+    CapacityOrdersArr *= 2;
 
-    DataOrder** newArr = new DataOrder * [Capacity];
+    DataOrder** newArr = new DataOrder * [CapacityOrdersArr];
 
-    for (int i = 0; i < OrderArrSize; i++)
+    for (int i = 0; i < NumElemOrdersArr; i++)
         newArr[i] = OrderArr[i];
 
-    for (int i = OrderArrSize; i < Capacity; i++)
+    for (int i = NumElemOrdersArr; i < CapacityOrdersArr; i++)
         newArr[i] = nullptr;
 
     delete[] OrderArr;
     OrderArr = newArr;
 }
 
+void MainTree::DecreaseArr()
+{
+    if (CapacityOrdersArr <= 2) return;
+    CapacityOrdersArr /= 2;
 
-int MainTree::GetHight(NodeMainTree* p)
+    DataOrder** newArr = new DataOrder * [CapacityOrdersArr];
+
+    for (int i = 0; i < NumElemOrdersArr; i++)
+        newArr[i] = OrderArr[i];
+
+    delete[] OrderArr;
+    OrderArr = newArr;
+}
+
+void MainTree::SetReportTree(ReportTree* reportTree)
+{
+    this->reportTree = reportTree;
+}
+size_t MainTree::GetCapasityOrdersArr()
+{
+    return this->CapacityOrdersArr;
+}
+
+int MainTree::GetNumElemOrdersArr()
+{
+    return this->NumElemOrdersArr;
+}
+
+DataOrder* MainTree::GetCellOrderArr(int& i)
+{
+    return  this->OrderArr[i];
+}
+
+
+
+
+int BaseAVLTree::GetHight(BaseNode* p)
 {
     return p == nullptr ? 0 : p->hight;
 }
-int MainTree::DifferHights(NodeMainTree* p)
+int BaseAVLTree::DifferHights(BaseNode* p)
 {
     return GetHight(p->right) - GetHight(p->left);
 }
-void MainTree::FixedHight(NodeMainTree* p)
+void BaseAVLTree::FixedHight(BaseNode* p)
 {
     unsigned int hl = GetHight(p->left);
     unsigned int hr = GetHight(p->right);
     p->hight = (hl > hr ? hl : hr) + 1;
 }
-NodeMainTree::NodeMainTree() {
-    hight = 1;
-    left = nullptr;
-    right = nullptr;
-    IndexList = new List();
+
+
+int BaseAVLTree::FindElemInListNodeTree(BaseNode* findData, DataOrder& data)
+{
+    NodeList* p = findData->IndexList->h;
+    if (p->next == findData->IndexList->h)
+    {
+        if (*GetCellOrderArr(p->Index) == data) return p->Index;
+    }
+    else
+    {
+        while (p->next != findData->IndexList->h)
+        {
+            if (*GetCellOrderArr(p->Index) == data) return p->Index;
+            p = p->next;
+        }
+        if (*GetCellOrderArr(p->Index) == data) return p->Index;
+    }
+
+    return -1;
 }
 
-NodeMainTree::~NodeMainTree() {
-    delete IndexList;
+NodeMainTree::NodeMainTree(unsigned int& key): key(key), BaseNode() {}
 
-}
 
 MainTree::MainTree(HashTable* courierHashTable) {
 
     this->CourierHashTable = courierHashTable;
     this->CourierHashTable->SetOrderTree(this);
+    
     this->root = nullptr;
-    this->Capacity = 2;
-    this->OrderArrSize = 0;
-    this->NumElem = 0;
-    this->OrderArr = new DataOrder*[Capacity];
-    for (int i = 0; i < Capacity; i++) {
+    this->CapacityOrdersArr = 2;
+    this->NumElemOrdersArr = 0;
+    this->OrderArr = new DataOrder*[CapacityOrdersArr];
+    for (int i = 0; i < CapacityOrdersArr; i++) {
         
         this->OrderArr[i] = nullptr;
     }
 }
-void MainTree::DeleteTree(NodeMainTree* root) {
-    if (root == nullptr)
-    {
-        return;
-    }
-    DeleteTree(root->left);
-    DeleteTree(root->right);
-    delete root;
-    return;
-    this->root = nullptr;
+
+void BaseAVLTree::DeleteTree(BaseNode* node) {
+    if (node == nullptr) return;
+
+    DeleteTree(node->left);
+    DeleteTree(node->right);
+    delete node;
 }
 
 MainTree::~MainTree() {
     
-        for (int i = 0; i < OrderArrSize; i++)
-            if(OrderArr[i] != nullptr) delete OrderArr[i];
+        for (int i = 0; i < NumElemOrdersArr; i++)
+            if(OrderArr[i] != nullptr)
+                delete OrderArr[i];
         delete[] OrderArr;
     DeleteTree(root);
+    this->root = nullptr;
+}
+
+ReportTree::~ReportTree() {
+
+    for (int i = 0; i < NumElemReportArr; i++)
+        if (ReportArr[i] != nullptr)
+        delete ReportArr[i];
+    delete[] ReportArr;
+    DeleteTree(root);
+    this->root = nullptr;
 }
 
 
-
-NodeMainTree* MainTree::RightTurn(NodeMainTree* node) {
-    NodeMainTree* q = node->left;
+BaseNode* BaseAVLTree::RightTurn(BaseNode* node) {
+    BaseNode* q = node->left;
     node->left = q->right;
     q->right = node;
     if (node == root) root = q;
@@ -140,8 +228,8 @@ NodeMainTree* MainTree::RightTurn(NodeMainTree* node) {
     return q;
 }
 
-NodeMainTree* MainTree::LeftTurn(NodeMainTree* node) {
-    NodeMainTree* p = node->right;
+BaseNode* BaseAVLTree::LeftTurn(BaseNode* node) {
+    BaseNode* p = node->right;
     node->right = p->left;
     p->left = node;
     if (node == root) root = p;
@@ -149,8 +237,8 @@ NodeMainTree* MainTree::LeftTurn(NodeMainTree* node) {
     FixedHight(p);
     return p;
 }
-NodeMainTree* MainTree::Rebalanse(NodeMainTree* node) {
-    NodeMainTree* p = node;
+BaseNode* BaseAVLTree::Rebalanse(BaseNode* node) {
+    BaseNode* p = node;
     if (DifferHights(p) == 2)
     {
         if (DifferHights(p->right) < 0)
@@ -173,92 +261,50 @@ NodeMainTree* MainTree::Rebalanse(NodeMainTree* node) {
 }
 
 
-void MainTree::FillArr(std::istream& in)
-{
-    string line;
-    bool inKouriers = true;
-    while ((inKouriers == true) && (std::getline(in, line)))
-    {
-        if (!line.empty())
-        {
-            std::istringstream iss(line);
-
-            pair <DataOrder, std::string> elem = CheckInputOrder(iss);
-
-            if (CourierHashTable->SearchInHashTable(elem.first.passNum).first != nullptr)
-            {
-                if (elem.second.empty())
-                {
-                    AddElemInArr(elem.first);
-
-                }
-                // ����� ������ ������ �� ������ � ������ ���������
-            }
-            else
-            {
-                // ������������� ���� ��� ��� ���������� ����� ��� � ����������� "�������" 
-                DeleteTree(this->root);
-                for (int i = 0; i < OrderArrSize; i++)
-                {
-                    delete OrderArr[i];
-                    OrderArr[i] = nullptr;
-                }
-                inKouriers = false;
-            }
-        }
-    }
-
-}
-
 bool MainTree::AddElemInArr(DataOrder& elem)
 {
-    if (CourierHashTable->SearchInHashTable(elem.passNum).first)
-    {
+    
         if (AddElem(elem) == true)
         {
 
-            if (OrderArrSize == Capacity)
-                ResizeArr();
+            if (NumElemOrdersArr >= CapacityOrdersArr)
+                IncreaseArr();
 
-            OrderArr[OrderArrSize - 1] = new DataOrder;
-            OrderArr[OrderArrSize - 1]->adres = elem.adres;
-            OrderArr[OrderArrSize - 1]->date = elem.date;
-            OrderArr[OrderArrSize - 1]->price = elem.price;
-            OrderArr[OrderArrSize - 1]->passNum = elem.passNum;
+            OrderArr[NumElemOrdersArr - 1] = new DataOrder;
+            OrderArr[NumElemOrdersArr - 1]->adres = elem.adres;
+            OrderArr[NumElemOrdersArr - 1]->date = elem.date;
+            OrderArr[NumElemOrdersArr - 1]->price = elem.price;
+            OrderArr[NumElemOrdersArr - 1]->passNum = elem.passNum;
+            reportTree->AddInTreeElem(reportTree->root, elem);
             return true;
 
         }
         else return false;
-    }
+
     
 }
 
 bool MainTree::AddElem(DataOrder& data)
 {
-    int SizeOld = this->OrderArrSize;
+    int SizeOld = this->NumElemOrdersArr;
     AddInTreeElem(this->root, data);
-    int SizeNew = this->OrderArrSize;
+    int SizeNew = this->NumElemOrdersArr;
     if (SizeOld != SizeNew) return true;
     else return false;
 
-
 }
 
-NodeMainTree* MainTree::AddInTreeElem(NodeMainTree* p, DataOrder& data) {
-
-
+BaseNode* MainTree::AddInTreeElem(BaseNode* p, DataOrder& data) {
    
-    if (p == nullptr) { // ���������� ������ ����
-        p = new NodeMainTree();
-        p->key = data.passNum;
-        p->IndexList->AddElem(OrderArrSize);
-        OrderArrSize += 1;
-        NumElem += 1;
+    if (p == nullptr) { // добавление нового узла
+        p = new NodeMainTree(data.passNum);
+        p->IndexList->AddElemInList(NumElemOrdersArr);
+        NumElemOrdersArr += 1;
         if (root == nullptr) root = p;
         return p;
     }
     unsigned int passNamData = data.passNum;
-    unsigned int passNamDataP = p->key;
+    unsigned int passNamDataP = p->GetKey();
     if (passNamData < passNamDataP){
         p->left = AddInTreeElem(p->left, data);
         FixedHight(p);
@@ -268,37 +314,26 @@ NodeMainTree* MainTree::AddInTreeElem(NodeMainTree* p, DataOrder& data) {
         FixedHight(p);
     }
     else{
-        int FinnDada = FindElemInList(p, data);
-        if (FinnDada == -1)
-        {
-            p->IndexList->AddElem(OrderArrSize);
-            OrderArrSize += 1;
-            NumElem += 1;
-        }
-        else
-        {
-            delete p;
-            p = nullptr;
-        }
+        
+            p->IndexList->AddElemInList(NumElemOrdersArr);
+            NumElemOrdersArr += 1;
+        
+        
     }
     return Rebalanse(p);
 }
 
-
-
-
-
-std::pair<NodeMainTree*, int> MainTree::SearchInTree( const unsigned int & passNum) {
+std::pair<BaseNode*, int> MainTree::SearchInTree( const unsigned int & key) {
 
     int SearchSteps = 0;
-    NodeMainTree* p = root;
+    BaseNode* p = root;
     while (p != nullptr) {
 
-        if (passNum < p->key){
+        if (key < p->GetKey()){
             p = p->left;
             SearchSteps += 1;
         }
-        else if (passNum > p->key) {
+        else if (key > p->GetKey()) {
             p = p->right;
             SearchSteps += 1;
         }
@@ -308,76 +343,54 @@ std::pair<NodeMainTree*, int> MainTree::SearchInTree( const unsigned int & passN
 }
 
 
-
-
-
-NodeMainTree* MainTree::maxLeft(NodeMainTree* p) {
+BaseNode* BaseAVLTree::maxLeft(BaseNode* p) {
     if (p->right == nullptr) return p;
     return maxLeft(p->right);
 
 }
-NodeMainTree* MainTree::RemoveMax(NodeMainTree* p)
+BaseNode* BaseAVLTree::RemoveMax(BaseNode* p)
 {
     if (p->right == nullptr)
     {
-        return p->left;
+        BaseNode* leftChild = p->left;
+        delete p;
+        return leftChild;
     }
     p->right = RemoveMax(p->right);
+    FixedHight(p);
     return Rebalanse(p);
 }
 
-int MainTree::FindElemInList(NodeMainTree* findData, DataOrder& data)
-{
-    NodeList* p = findData->IndexList->h;
-    if (p->next == findData->IndexList->h)
-    {
-        if (*OrderArr[p->Index] == data) return p->Index;
-    }
-    else
-    {
-        do
-        {
-            p = p->next;
-            if (*OrderArr[p->Index] == data) return p->Index;
-
-        } while (p != findData->IndexList->h);
-
-        ;
-    }
-
-    return -1;
-}
-
-
-
-
 bool  MainTree::DelElemInArr(DataOrder& elem)
 {
-    if (DelElem(elem) != true)
+    if (DelElem(elem) == true)
     {
-        return false;
+        if (NumElemOrdersArr == (CapacityOrdersArr/2))
+            DecreaseArr();
+
+        return true;
         
     }
-    return true;
+    return false;
 }
 
 
 bool MainTree::DelElem(DataOrder& data)
 {
-    int SizeOld = this->NumElem;
+    int SizeOld = this->NumElemOrdersArr;
     DelInTreeElem(this->root, data);
-    int SizeNew = this->NumElem;
+    int SizeNew = this->NumElemOrdersArr;
     if (SizeOld != SizeNew) return true;
     else return false;
 }
 
-NodeMainTree* MainTree::DelInTreeElem(NodeMainTree* p, DataOrder& data) {
+BaseNode* MainTree::DelInTreeElem(BaseNode* p, DataOrder& data) {
 
     if (p == nullptr) {
         return nullptr;
     }
     unsigned int passNamData = data.passNum;
-    unsigned int passNamDataP = p->key;
+    unsigned int passNamDataP = p->GetKey();
     if (passNamData < passNamDataP)
     {
         p->left = DelInTreeElem(p->left, data);
@@ -390,37 +403,74 @@ NodeMainTree* MainTree::DelInTreeElem(NodeMainTree* p, DataOrder& data) {
     }
     else
     {
-        int FinnDada = FindElemInList(p, data);
-        if (FinnDada != -1)
+        int FindDelIndex = FindElemInListNodeTree(p, data);
+        int LastElemInd = NumElemOrdersArr - 1;
+        if (FindDelIndex != -1)
         {
-            p->IndexList->DelElem(FinnDada);
-            delete OrderArr[FinnDada];
-            OrderArr[FinnDada] = nullptr;
-            NumElem -= 1;
+            if (this->reportTree != nullptr) this->reportTree->DelInTreeElem(reportTree->root, data);
+
+            p->IndexList->DelElemInList(FindDelIndex);
+            delete OrderArr[FindDelIndex];
+            // заполнение пустой ячейки списка заказов после удаления на последний элемент
+            if (FindDelIndex != LastElemInd) 
+            {
+                OrderArr[FindDelIndex] = OrderArr[LastElemInd];
+                List* ListWithMaxInd = SearchInTree(OrderArr[LastElemInd]->passNum).first->IndexList;
+                ListWithMaxInd->DelElemInList(LastElemInd);
+                ListWithMaxInd->AddElemInList(FindDelIndex);
+                if (this->reportTree != nullptr) {
+                    List* ListReportTreeWithMaxInd = this->reportTree->SearchInTree(SummDate(OrderArr[LastElemInd]->date)).first->IndexList;
+                    ListReportTreeWithMaxInd->DelElemInList(LastElemInd);
+                    ListReportTreeWithMaxInd->AddElemInList(FindDelIndex);
+                }
+            }
+            OrderArr[LastElemInd] = nullptr;
+            NumElemOrdersArr -= 1;
+
+
         }
 
-        if (p->IndexList->h == nullptr)
-        {
-            if ((p == root) && (p->left == nullptr) && (p->right == nullptr))
-            {
+        // удаление самого узла(когда внутренний кольцевой список пуст)
+        if (p->IndexList->h == nullptr) {
+
+            //Нет потомков
+            if (p->left == nullptr && p->right == nullptr) {
+                if (p == root) root = nullptr;
                 delete p;
-                p = nullptr;
-                root = nullptr;
-                return p;
+                return nullptr;
             }
-            else
-            {
-                NodeMainTree* q = p->left;
-                NodeMainTree* r = p->right;
-                if (q == nullptr) return r;
-                NodeMainTree* max = maxLeft(q);
-                if (p == root) root = max;
-                max->left = RemoveMax(q);
-                max->right = r;
+            //Нет левого потомка
+            else if (p->left == nullptr) {
+                BaseNode* r = p->right;
+                if (p == root) root = r;
                 delete p;
-                return Rebalanse(max);
+                return r;
+            }
+            //Нет правого потомка
+            else if (p->right == nullptr) {
+                BaseNode* l = p->left;
+                if (p == root) root = l;
+                delete p;
+                return l;
+            }
+            //Есть оба потомка
+            else {
+                // Ищем замену: максимальный элемент в левом поддереве
+                BaseNode* maxNode = maxLeft(p->left);
+                // Очищаем старый (уже пустой) список текущего узла
+                delete p->IndexList;
+
+                p->IndexList = maxNode->IndexList;
+                p->SetKey(maxNode->GetKey());
+                // Отвязываем список от узла-замены. 
+                maxNode->IndexList = nullptr;
+                // Удаляем узел-замену из левого поддерева
+                p->left = RemoveMax(p->left);
+                // Возвращаем текущий узел 
+                return Rebalanse(p);
             }
         }
+        
         
     }
     return Rebalanse(p);
@@ -430,43 +480,268 @@ NodeMainTree* MainTree::DelInTreeElem(NodeMainTree* p, DataOrder& data) {
 
 
 
-void MainTree::PrintTree(NodeMainTree* root, int space, int indent, ostream& out) {
-    if (root == nullptr)   // ������� ������
-    {
-        return;
-    }
-    space += indent;
-    out << "\n\n\n";
-    this->PrintTree(root->right, space, indent, out);  //����������� ����� ������� ���������
-
-    
-        NodeList* p = root->IndexList->t;
-        do
-        {
-            p = p->next;
-            for (int i = 0; i < space; i++)
-                out << " ";
-            out << OrderArr[p->Index];
-            
-        } while (p->next != root->IndexList->h);
-    
-
-    this->PrintTree(root->left, space, indent, out);   //����������� ����� ������ ���������
 
 
-};
 
 
-void MainTree::PrintOrderArr(std::ostream& out)
+
+unsigned int NodeReportTree::GetKey()
 {
-    for (int i = 0; i < OrderArrSize; i++)
-    {
-        if (OrderArr[i] != nullptr)
-            out << OrderArr[i];
-        else
-            out << "nullptr" << endl;
+    return SummDate(this->key);
+}
 
+void NodeReportTree::SetKey(const unsigned int& newKey)
+{
+
+    this->key.d = newKey % 100;
+    this->key.y = newKey/10000;
+    this->key.m = ConvIntToMon((newKey/100)%100);
+
+}
+
+size_t ReportTree::GetCapasityReportArr()
+{
+    return this->CapacityReportArr;
+}
+
+int ReportTree::GetNumElemReportArr()
+{
+    return this->NumElemReportArr;
+}
+
+void ReportTree::ResizeReportArr()
+{
+    
+    CapacityReportArr *= 2;
+
+    DataReport** newArr = new DataReport * [CapacityReportArr];
+
+    for (int i = 0; i < NumElemReportArr; i++)
+        newArr[i] = ReportArr[i];
+
+    for (int i = NumElemReportArr; i < CapacityReportArr; i++)
+        newArr[i] = nullptr;
+
+    delete[] ReportArr;
+    ReportArr = newArr;
+}
+
+
+
+NodeReportTree::NodeReportTree(Date& key):key(key), BaseNode() {}
+
+void ReportTree::ClearReportArr()
+{
+    for (int i = 0; i < CapacityReportArr; i++) {
+        if (ReportArr[i] != nullptr) {
+            delete ReportArr[i];
+            ReportArr[i] = nullptr;
+        }
+    }
+    NumElemReportArr = 0;
+}
+ReportTree::ReportTree(MainTree* mainTree, HashTable* mainHashTable) {
+    this->root = nullptr;
+    this->CapacityReportArr = 2;
+    this->NumElemReportArr = 0;
+    this->mainTree = mainTree;
+    this->CourierHashTable = mainHashTable;
+    ReportArr = new DataReport * [CapacityReportArr];
+    for (int i = 0; i < CapacityReportArr; i++) {
+
+        ReportArr[i] = nullptr;
     }
 }
+
+
+
+
+
+DataOrder* ReportTree::GetCellOrderArr(int& i)
+{
+    return  mainTree->GetCellOrderArr(i);
+}
+
+BaseNode* ReportTree::AddInTreeElem(BaseNode* p, DataOrder& data) {
+
+    if (p == nullptr) { // добавление нового узла
+        p = new NodeReportTree(data.date);
+        int indexMainArr = FindElemInListNodeTree(mainTree->SearchInTree(data.passNum).first, data);
+        p->IndexList->AddElemInList(indexMainArr);
+        
+        if (root == nullptr) root = p;
+        return p;
+    }
+    unsigned int DATEData = SummDate(data.date);
+   
+    unsigned int DATEDataP = p->GetKey();
+    if (DATEData < DATEDataP) {
+        p->left = AddInTreeElem(p->left, data);
+        FixedHight(p);
+    }
+    else if (DATEData > DATEDataP) {
+        p->right = AddInTreeElem(p->right, data);
+        FixedHight(p);
+    }
+    else {
+        int indexMainArr = FindElemInListNodeTree(mainTree->SearchInTree(data.passNum).first, data);
+        p->IndexList->AddElemInList(indexMainArr);
+        
+    }
+    return Rebalanse(p);
+}
+
+
+BaseNode* ReportTree::DelInTreeElem(BaseNode* p, DataOrder& data) {
+
+    if (p == nullptr) {
+        return nullptr;
+    }
+    unsigned int DATEData = SummDate(data.date);
+    unsigned int DATEDataP = p->GetKey();
+    if (DATEData < DATEDataP)
+    {
+        p->left = DelInTreeElem(p->left, data);
+        FixedHight(p);
+    }
+    else if (DATEData > DATEDataP)
+    {
+        p->right = DelInTreeElem(p->right, data);
+        FixedHight(p);
+    }
+    else
+    {
+        int FindDelIndex = FindElemInListNodeTree(mainTree->SearchInTree(data.passNum).first, data);
+        if (FindDelIndex != -1)
+        {
+            p->IndexList->DelElemInList(FindDelIndex);
+            
+        }
+        if (p->IndexList->h == nullptr) {
+
+            //Нет потомков
+            if (p->left == nullptr && p->right == nullptr) {
+                if (p == root) root = nullptr;
+                delete p;
+                return nullptr;
+            }
+            //Нет левого потомка
+            else if (p->left == nullptr) {
+                BaseNode* r = p->right;
+                if (p == root) root = r;
+                delete p;
+                return r;
+            }
+            //Нет правого потомка
+            else if (p->right == nullptr) {
+                BaseNode* l = p->left;
+                if (p == root) root = l;
+                delete p;
+                return l;
+            }
+            //Есть оба потомка
+            else {
+                // Ищем замену: максимальный элемент в левом поддереве
+                BaseNode* maxNode = maxLeft(p->left);
+                // Очищаем старый (уже пустой) список текущего узла
+                delete p->IndexList;
+
+                p->IndexList = maxNode->IndexList;
+                p->SetKey(maxNode->GetKey());
+                // Отвязываем список от узла-замены. 
+                maxNode->IndexList = nullptr;
+                // Удаляем узел-замену из левого поддерева
+                p->left = RemoveMax(p->left);
+                // Возвращаем текущий узел 
+                return Rebalanse(p);
+            }
+        }
+
+    }
+    return Rebalanse(p);
+
+
+}
+
+std::pair<BaseNode*, int> ReportTree::SearchInTree(const unsigned int& key) {
+
+    int SearchSteps = 0;
+    BaseNode* p = root;
+    while (p != nullptr) {
+        unsigned int DATEData = key;
+        unsigned int DATEDataP = p->GetKey();
+
+        if (DATEData < DATEDataP) {
+            p = p->left;
+            SearchSteps += 1;
+        }
+        else if (DATEData > DATEDataP) {
+            p = p->right;
+            SearchSteps += 1;
+        }
+        else return { p , SearchSteps };
+    }
+    return { nullptr, SearchSteps };
+}
+
+bool ReportTree::GenerateReport(Date& date, Adres& adres, FIO& fio)
+{
+    ClearReportArr(); // отчищаем предыдущий отчёт
+    bool isGenerate = false;
+    BaseNode* FoundDATENode = SearchInTree(SummDate(date)).first;
+    if (FoundDATENode != nullptr)
+    {
+        NodeList* p = FoundDATENode->IndexList->h;
+
+        do {
+            p = p->next;
+            Adres FoundAdress;
+            FoundAdress = GetCellOrderArr(p->Index)->adres;
+            if (FoundAdress == adres)
+            {
+                Cell* FounFIOCell = CourierHashTable->SearchInHashTable(GetCellOrderArr(p->Index)->passNum).first;
+                if (FounFIOCell != nullptr)
+                {
+                    if (CourierHashTable->GetCellCourierArr(FounFIOCell->index)->fio == fio)
+                    {
+                        ReportArr[NumElemReportArr] = new DataReport;
+                        ReportArr[NumElemReportArr]->date = date;
+                        ReportArr[NumElemReportArr]->price = GetCellOrderArr(p->Index)->price;
+                        ReportArr[NumElemReportArr]->adres = FoundAdress;
+
+                        ReportArr[NumElemReportArr]->fio = CourierHashTable->GetCellCourierArr(FounFIOCell->index)->fio;
+                        ReportArr[NumElemReportArr]->transp = CourierHashTable->GetCellCourierArr(FounFIOCell->index)->transp;
+                        ReportArr[NumElemReportArr]->passNum = FounFIOCell->key;
+
+                        NumElemReportArr += 1;
+                        isGenerate = true;
+
+                    }
+                }
+            }
+            if (NumElemReportArr == CapacityReportArr) ResizeReportArr();
+
+        } while (p != FoundDATENode->IndexList->h);
+    }
+    return isGenerate;
+}
+
+
+
+
+
+void ReportTree::PrintReport(std::ostream& out)
+{
+    if (ReportArr)
+    {
+        for (int i = 0; i < NumElemReportArr; i++)
+        {
+            if (ReportArr[i] != nullptr) out << ReportArr[i];
+        }
+    }
+}
+
+
+
 
 

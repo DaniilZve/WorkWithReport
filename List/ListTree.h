@@ -9,8 +9,10 @@ public:
 	NodeList* t;
 	List();
 	~List();
-	List* AddElem( int& data);
-	List* DelElem( int& data);
+	void AddElemInList( int data);
+	void DelElemInList( int data);
+	bool SearchInList( int data);
+	
 };
 
 class NodeList

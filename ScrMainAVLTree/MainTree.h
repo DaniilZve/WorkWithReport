@@ -1,71 +1,158 @@
 #pragma once
 #include<iostream>
 #include <string>
+#include"../Stracts/Stracts.h"
 
 struct DataOrder;
 struct Date;
 class List;
 class HashTable;
+class ReportTree;
+class MainTree;
+class NodeMainTree;
+struct FIO;
+struct DataReport;
+struct Adres;
 
+
+bool operator ==(FIO& fio1, FIO& fio2);
+bool operator ==(Adres& adres1, Adres& adres2);
+std::ostream& operator << (std::ostream& out, DataReport* data);
 std::ostream& operator << (std::ostream& out, DataOrder* data);
 bool operator ==(DataOrder& data1, DataOrder& data2);
 int SummDate(Date& date);
-int ConvMonToInt(std:: string& m);
 
-class NodeMainTree
-{
 
+
+class BaseNode {
 public:
 	unsigned int hight;
-	NodeMainTree* left;
-	NodeMainTree* right;
-	unsigned int key;
-	List* IndexList;
-	NodeMainTree();
-	~NodeMainTree();
+	BaseNode* left;
+	BaseNode* right;
+	List* IndexList; // Общий для обоих деревьев список индексов заказов
+	virtual void SetKey(const unsigned int& newKey) = 0;
+	virtual unsigned int GetKey() = 0;
+	BaseNode();
+	virtual ~BaseNode();
+
 };
 
-class MainTree
+class NodeMainTree: public BaseNode
 {
 private:
-	HashTable* CourierHashTable;
-	bool AddElem(DataOrder& data);
-	NodeMainTree* AddInTreeElem(NodeMainTree* p, DataOrder& data);
-	bool DelElem(DataOrder& data);
-	NodeMainTree* DelInTreeElem(NodeMainTree* p, DataOrder& data);
-	int FindElemInList(NodeMainTree* findData, DataOrder& data);
-	NodeMainTree* RightTurn(NodeMainTree* node);
-	NodeMainTree* LeftTurn(NodeMainTree* node);
-	NodeMainTree* Rebalanse(NodeMainTree* node);
-	void DeleteTree(NodeMainTree* node);
-	NodeMainTree* maxLeft(NodeMainTree* p);
-	NodeMainTree* RemoveMax(NodeMainTree* p);
-	void FixedHight(NodeMainTree* p);
-	int GetHight(NodeMainTree* p);
-	int DifferHights(NodeMainTree* p);
-	void ResizeArr();
+	unsigned int key;
+public:
 	
+	unsigned int GetKey() override;
+	void SetKey(const unsigned int& newKey)override;
+
+	NodeMainTree(unsigned int& key);
+};
+
+
+class NodeReportTree : public BaseNode
+{
+private:
+	Date key;
+public:
+	
+	unsigned int GetKey() override;
+	void SetKey(const unsigned int& newKey)override;
+	NodeReportTree(Date& key);
+};
+
+
+
+class BaseAVLTree {
+protected:
+
+	
+	BaseNode* maxLeft(BaseNode* p);
+	BaseNode* RemoveMax(BaseNode* p);
+	int GetHight(BaseNode* p);
+	int DifferHights(BaseNode* p);
+	void FixedHight(BaseNode* p);
+	BaseNode* RightTurn(BaseNode* p);
+	BaseNode* LeftTurn(BaseNode* q);
+	BaseNode* Rebalanse(BaseNode* p);
+	void DeleteTree(BaseNode* node);
+	int FindElemInListNodeTree(BaseNode* findData, DataOrder& data);
+public:
+	BaseNode* root;
+	virtual BaseNode* AddInTreeElem(BaseNode* p, DataOrder& data) = 0;
+	virtual BaseNode* DelInTreeElem(BaseNode* p, DataOrder& data) = 0;
+	virtual std::pair<BaseNode*, int> SearchInTree(const unsigned int& key) = 0;
+	virtual DataOrder* GetCellOrderArr(int& i) = 0;
+	
+
+};
+
+
+class MainTree : public BaseAVLTree
+{
+private:
+	
+	size_t CapacityOrdersArr;
+	int NumElemOrdersArr;
+	HashTable* CourierHashTable;
+	BaseAVLTree* reportTree;
+	DataOrder** OrderArr;
+	bool AddElem(DataOrder& data);
+	bool DelElem(DataOrder& data);
+	BaseNode* AddInTreeElem(BaseNode* p, DataOrder& data) override;
+	BaseNode* DelInTreeElem(BaseNode* p, DataOrder& data) override;
+	void IncreaseArr();
+	void DecreaseArr();
+	
+
+public:
+	
+	size_t GetCapasityOrdersArr();
+	int GetNumElemOrdersArr();
+	void SetReportTree(ReportTree* reportTree);
+	DataOrder* GetCellOrderArr(int& i) override;
+	MainTree(HashTable* courierHashTable);
+	~MainTree();
+	
+	bool AddElemInArr(DataOrder& elem);
+	bool DelElemInArr(DataOrder& elem);
+	std::pair<BaseNode*, int> SearchInTree(const unsigned int& key) override;
+	
+
+};
+
+
+class ReportTree : public BaseAVLTree
+{
+private:
+	DataReport** ReportArr;
+	size_t CapacityReportArr;
+	int NumElemReportArr;
+	BaseAVLTree* mainTree;
+	HashTable* CourierHashTable;
+	void ResizeReportArr();
+
 
 
 public:
-	int OrderArrSize;
-	int NumElem;
-	size_t Capacity;
-	DataOrder** OrderArr;
-	MainTree(HashTable* courierHashTable);
-	~MainTree();
-	NodeMainTree* root;
-	std::pair<NodeMainTree*, int> SearchInTree(const unsigned int& passNum);
-	bool AddElemInArr(DataOrder& elem);
-	void FillArr(std::istream& in);
 
-	bool DelElemInArr(DataOrder& elem);
+	
+	
+	size_t GetCapasityReportArr();
+	int GetNumElemReportArr();
+	DataOrder* GetCellOrderArr(int& i) override;
 
-	void PrintTree(NodeMainTree* root, int space = 0, int indent = 10, std::ostream& out = std::cout);
-	void PrintOrderArr(std::ostream& out);
+	ReportTree(MainTree* mainTree, HashTable* mainHashTable);
+	~ReportTree();
+	
+	void ClearReportArr();
+	bool GenerateReport(Date& date, Adres& adres, FIO& fio);
+	void PrintReport(std::ostream& out);
 
-	void LogerTree(std::string text);
-	void LogerTree(std::string text, int num);
+	BaseNode* AddInTreeElem(BaseNode* p, DataOrder& data) override;
+	BaseNode* DelInTreeElem(BaseNode* p, DataOrder& data) override;
+	std::pair<BaseNode*, int> SearchInTree(const unsigned int& key) override;
+	
 
 
 };

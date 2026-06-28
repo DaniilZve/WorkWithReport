@@ -59,12 +59,14 @@ void MainWindow::setupUI() {
     courierMenu->addAction("Добавление", this, &MainWindow::addCourier);
     courierMenu->addAction("Удаление", this, &MainWindow::deleteCourier);
     courierMenu->addAction("Загрузка из файла", this, &MainWindow::loadCouriers);
+    courierMenu->addAction("Сохранение в файл", this, &MainWindow::saveCouriersToFile);
     courierMenu->addAction("Поиск", this, &MainWindow::searchCourier);
 
     QMenu* orderMenu = menuBar()->addMenu("Заказы");
     orderMenu->addAction("Добавление", this, &MainWindow::addOrder);
     orderMenu->addAction("Удаление", this, &MainWindow::deleteOrder);
     orderMenu->addAction("Загрузка из файла", this, &MainWindow::loadOrders);
+    orderMenu->addAction("Сохранение в файл", this, &MainWindow::saveOrdersToFile);
     orderMenu->addAction("Поиск", this, &MainWindow::searchOrder);
 
     menuBar()->addAction("Формирование отчёта", this, &MainWindow::onGenerateReportClicked);
@@ -75,14 +77,22 @@ void MainWindow::logMessage(const QString& msg) {
     logArea->append(msg);
 }
 
+                    
+
 bool MainWindow::initializeStructuresIfNeeded() {
     if (!hashTable) {
         bool ok;
-        int size = QInputDialog::getInt(this, "Инициализация", "Введите начальный размер справочника (для хеш-таблицы):", 10, 1, 10000, 1, &ok);
+        size_t size = QInputDialog::getInt(this, "Инициализация", "Введите начальный размер справочника (для хеш-таблицы). \nВведённый размер должен являться степенью двойки (2;4;8;16 и т.д):", 10, 1, 10000, 1, &ok);
         if (!ok) return false;
-
+        if (!isPowerOfTwo(size))
+        {
+            QMessageBox::critical(this, "Ошибка", "Введённый размер не является степенью двойки.");
+            return false;
+        }
         hashTable = new HashTable(size);
         mainTree = new MainTree(hashTable);
+        reportTree = new ReportTree(mainTree, hashTable);
+        mainTree->SetReportTree(reportTree);
         logMessage("Внутренние структуры инициализированы размером: " + QString::number(size));
     }
     return true;
@@ -110,18 +120,18 @@ void MainWindow::updateCourierTable() {
 
     courierTable->setRowCount(0);
     if (!hashTable) return;
-
-    for (int i = 0; i < hashTable->SizeArr; i++) {
-        if (hashTable->CourierArr[i] != nullptr) {
+    for (int i = 0; i < hashTable->GetMaxSizeArr(); i++) {
+        if (hashTable->GetCellCourierArr(i) != nullptr) {
             int row = courierTable->rowCount();
             courierTable->insertRow(row);
 
-            courierTable->setItem(row, 0, new QTableWidgetItem(QString::number(hashTable->CourierArr[i]->passNum).rightJustified(5, '0')));
-            courierTable->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(hashTable->CourierArr[i]->fio.f)));
-            courierTable->setItem(row, 2, new QTableWidgetItem(QString::fromStdString(hashTable->CourierArr[i]->fio.i)));
-            courierTable->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(hashTable->CourierArr[i]->fio.o)));
-            courierTable->setItem(row, 4, new QTableWidgetItem(QString::fromStdString(hashTable->CourierArr[i]->transp.brand)));
-            courierTable->setItem(row, 5, new QTableWidgetItem(QString::fromStdString(hashTable->CourierArr[i]->transp.model)));
+            courierTable->setItem(row, 0, new QTableWidgetItem(QString::number(hashTable->GetCellCourierArr(i)->passNum).rightJustified(5, '0')));
+            courierTable->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(hashTable->GetCellCourierArr(i)->fio.f)));
+            courierTable->setItem(row, 2, new QTableWidgetItem(QString::fromStdString(hashTable->GetCellCourierArr(i)->fio.i)));
+            courierTable->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(hashTable->GetCellCourierArr(i)->fio.o)));
+            courierTable->setItem(row, 4, new QTableWidgetItem(QString::fromStdString(hashTable->GetCellCourierArr(i)->transp.brand)));
+            courierTable->setItem(row, 5, new QTableWidgetItem(QString::fromStdString(hashTable->GetCellCourierArr(i)->transp.model)));
+            
         }
     }
 }
@@ -139,25 +149,22 @@ void MainWindow::addCourier() {
         auto result = CheckInputCourier(iss);
 
         if (result.second.empty()) {
-            if (!(hashTable->SizeArr >= hashTable->MaxSizeArr))
+            
+            std::pair <bool, int> resultAdd = hashTable->AddInTable(result.first);
+            if (resultAdd.first == true)
             {
-                if (hashTable->AddElemInArr(result.first))
-                {
-                    updateCourierTable();
-                    updateDebugWindow();
-                    logMessage(QString("Курьер с пропуском %1 успешно добавлен вручную.").arg(result.first.passNum));
-                }
-                else
-                {
-                    QMessageBox::critical(this, "Ошибка", "Введённый номер пропуска уже есть в справочнике");
-                    logMessage(QString("Курьера с пропуском %1 не удалось добавить.").arg(result.first.passNum));
-                }
+                updateCourierTable();
+                updateDebugWindow();
+                logMessage(QString("Курьер с пропуском %1 успешно добавлен вручную.").arg(result.first.passNum));
             }
             else
             {
-                QMessageBox::critical(this, "Ошибка", "Хеш-таблица переполнена");
-                logMessage(QString("Курьера с пропуском %1 не удалось добавить, так как внутренняя структура данных переполнена.").arg(result.first.passNum));
+                if (resultAdd.second == NO_CELL) QMessageBox::critical(this, "Ошибка", "Коэффициент заполненности слишком высок, из-за чего не удалось найти место вставки.");
+                else QMessageBox::critical(this, "Ошибка", "Курьер с таким номером пропуска уже есть в справочнике.");
+
+                logMessage(QString("Курьера с пропуском %1 не удалось добавить.").arg(result.first.passNum));
             }
+            
         }
         else {
             QMessageBox::critical(this, "Ошибка", QString::fromStdString(result.second));
@@ -168,7 +175,7 @@ void MainWindow::addCourier() {
 
 // Удалить курьера
 void MainWindow::deleteCourier() {
-    if (!hashTable || hashTable->NumElem == 0) {
+    if (!hashTable || hashTable->GetNumElem() == 0) {
         QMessageBox::warning(this, "Внимание", "Справочник курьеров пуст.");
         return;
     }
@@ -179,13 +186,15 @@ void MainWindow::deleteCourier() {
         auto result = CheckInputCourier(iss); 
 
         if (result.second.empty()) {
-            if (hashTable->DelElemInArr(result.first))
+
+            // Проверка на связанные данные
+            if (mainTree && mainTree->SearchInTree(result.first.passNum).first != nullptr) {
+                QMessageBox::critical(this, "Ошибка", "Нельзя удалить курьера: есть связанные данные в справочнике 'Заказы'.");
+                return;
+            }
+            if (hashTable->DelInTable(result.first))
             {
-                // Проверка на связанные данные
-                if (mainTree && mainTree->SearchInTree(result.first.passNum).first != nullptr) {
-                    QMessageBox::critical(this, "Ошибка", "Нельзя удалить курьера: есть связанные данные в справочнике 'Заказы'.");
-                    return;
-                }
+               
                     updateCourierTable();
                     updateDebugWindow();
                     logMessage(QString("Курьер с пропуском %1 удален.").arg(result.first.passNum));
@@ -214,8 +223,11 @@ void MainWindow::loadCouriers() {
     if (!initializeStructuresIfNeeded()) return;
 
     QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Ошибка", "Не удалось открыть файл для чтения.");
+        logMessage("Не удалось загрузить данные о курьерах из текстового файла");
+        return;
+    }
     QTextStream in(&file);
     int lineNum = 1;
     bool hasError = false;
@@ -228,9 +240,9 @@ void MainWindow::loadCouriers() {
         auto result = CheckInputCourier(iss);
 
         if (result.second.empty()) {
-            hashTable->AddElemInArr(result.first);
             
-            if (!(hashTable->SizeArr >= hashTable->MaxSizeArr))
+            std::pair <bool, int> resultAdd = hashTable->AddInTable(result.first);
+            if ( resultAdd.first)
             {
                
                 int row = courierTable->rowCount();
@@ -245,33 +257,67 @@ void MainWindow::loadCouriers() {
             }
             else
             {
-                QMessageBox::critical(this, "Ошибка загрузки", QString("Хеш-таблица пеерполнена. Загрузка остановлена на строке %1").arg(lineNum));
-                logMessage(QString("Курьеров не удалось загрузить, так как внутренняя структура данных переполнена.").arg(result.first.passNum));
+                if (resultAdd.second == NO_CELL) QMessageBox::critical(this, "Ошибка загрузки", QString("Коэффициент заполненности слишком высок, из-за чего не удалось найти место вставки. Загрузка остановлена на строке %1").arg(lineNum));
+                else QMessageBox::critical(this, "Ошибка загрузки", QString("Очередной курьер уже есть в справочнике. Загрузка остановлена на строке %1").arg(lineNum));
                 hasError = true;
                 break;
             }
         }
         else {
             QMessageBox::critical(this, "Ошибка загрузки", QString("Ошибка в строке %1. Загрузка остановлена.").arg(lineNum));
-            logMessage("Справочник курьеров не удалось загрузить из файла.");
             hasError = true;
             break;
         }
         lineNum++;
     }
 
-    if (hasError) clearAllData(); // Отмена действия при ошибке
-    else logMessage("Справочник курьеров успешно загружен из файла.");
+    if (hasError)
+    {
+        logMessage("Не удалось загрузить данные о курьерах из текстового файла");
+        clearAllData(); // Отмена действия при ошибке
+    }
+    else logMessage("Данные о курьерах успешно загружены из текстового файла.");
 
     updateDebugWindow();
 }
 
+// Сохранение курьеров в текстовый файл
+void MainWindow::saveCouriersToFile() {
+    if (!hashTable || hashTable->GetNumElem() == 0) {
+        QMessageBox::warning(this, "Внимание", "Справочник курьеров пуст. Нечего сохранять.");
+        return;
+    }
 
+    QString fileName = QFileDialog::getSaveFileName(this, "Сохранить файл курьеров", "", "Text Files (*.txt);;All Files (*)");
+    if (fileName.isEmpty()) return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        logMessage("Не удалось сохранить данные о курьерах в текстовый файл.");
+        return;
+    }
+
+    QTextStream out(&file);
+    // Обходим внутренний массив хеш-таблицы
+    for (int i = 0; i < hashTable->GetMaxSizeArr(); i++) {
+        if (hashTable->GetCellCourierArr(i) != nullptr) {
+            out << QString::number(hashTable->GetCellCourierArr(i)->passNum).rightJustified(5, '0') << " "
+                << QString::fromStdString(hashTable->GetCellCourierArr(i)->fio.f) << " "
+                << QString::fromStdString(hashTable->GetCellCourierArr(i)->fio.i) << " "
+                << QString::fromStdString(hashTable->GetCellCourierArr(i)->fio.o) << " "
+                << QString::fromStdString(hashTable->GetCellCourierArr(i)->transp.brand) << " "
+                << QString::fromStdString(hashTable->GetCellCourierArr(i)->transp.model) << "\n";
+            
+        }
+    }
+
+    file.close();
+    logMessage("Данные о курьерах успешно сохранены в текстовый файл: " + fileName);
+}
 
 //Найти курьера 
-
 void MainWindow::searchCourier() {
-    if (!hashTable || hashTable->NumElem == 0) {
+    if (!hashTable || hashTable->GetNumElem() == 0) {
         QMessageBox::warning(this, "Внимание", "Справочник курьеров пуст.");
         return;
     }
@@ -283,10 +329,10 @@ void MainWindow::searchCourier() {
 
     if (isNatural(passStr) && (passStr.length() == 5))
     {
-
-        std::pair <Cell*, int> cell = hashTable->SearchInHashTable(stoi(passStr));
+        unsigned int passNam = stoi(passStr);
+        std::pair <Cell*, int> cell = hashTable->SearchInHashTable(passNam);
         if (cell.first) {
-            DataCourier* c = hashTable->CourierArr[cell.first->index];
+            DataCourier* c = hashTable->GetCellCourierArr(cell.first->index);
             QString info = QString("Найден курьер!\nПропуск: %1\nФИО: %2 %3 %4\nТС: %5 %6")
                 .arg(c->passNum).arg(c->fio.f.c_str()).arg(c->fio.i.c_str()).arg(c->fio.o.c_str())
                 .arg(c->transp.brand.c_str()).arg(c->transp.model.c_str());
@@ -312,30 +358,30 @@ void MainWindow::searchCourier() {
 void MainWindow::updateOrderTable() {
 
     orderTable->setRowCount(0);
-    if (!mainTree || !mainTree->OrderArr) return;
+    if (!mainTree) return;
 
     // Идем по всему массиву указателей структуры данных AVL-дерева
-    for (size_t i = 0; i < mainTree->Capacity; i++) {
-        if (mainTree->OrderArr[i] != nullptr) {
+    for (int i = 0; i < mainTree->GetCapasityOrdersArr(); i++) {
+        if (mainTree->GetCellOrderArr(i) != nullptr) {
             int row = orderTable->rowCount();
             orderTable->insertRow(row);
            
-            orderTable->setItem(row, 0, new QTableWidgetItem(QString::number(mainTree->OrderArr[i]->passNum).rightJustified(5, '0')));
+            orderTable->setItem(row, 0, new QTableWidgetItem(QString::number(mainTree->GetCellOrderArr(i)->passNum).rightJustified(5, '0')));
 
             QString dateStr = QString("%1 %2 %3")
-                .arg(mainTree->OrderArr[i]->date.d)
-                .arg(QString::fromStdString(mainTree->OrderArr[i]->date.m))
-                .arg(mainTree->OrderArr[i]->date.y);
+                .arg(mainTree->GetCellOrderArr(i)->date.d)
+                .arg(QString::fromStdString(mainTree->GetCellOrderArr(i)->date.m))
+                .arg(mainTree->GetCellOrderArr(i)->date.y);
 
-            orderTable->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(mainTree->OrderArr[i]->adres.street)));
-            orderTable->setItem(row, 2, new QTableWidgetItem(QString::number(mainTree->OrderArr[i]->adres.house)));
+            orderTable->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(mainTree->GetCellOrderArr(i)->adres.street)));
+            orderTable->setItem(row, 2, new QTableWidgetItem(QString::number(mainTree->GetCellOrderArr(i)->adres.house)));
 
-            orderTable->setItem(row, 3, new QTableWidgetItem(QString::number(mainTree->OrderArr[i]->date.d)));
-            orderTable->setItem(row, 4, new QTableWidgetItem(QString::fromStdString(mainTree->OrderArr[i]->date.m)));
-            orderTable->setItem(row, 5, new QTableWidgetItem(QString::number(mainTree->OrderArr[i]->date.y)));
+            orderTable->setItem(row, 3, new QTableWidgetItem(QString::number(mainTree->GetCellOrderArr(i)->date.d)));
+            orderTable->setItem(row, 4, new QTableWidgetItem(QString::fromStdString(mainTree->GetCellOrderArr(i)->date.m)));
+            orderTable->setItem(row, 5, new QTableWidgetItem(QString::number(mainTree->GetCellOrderArr(i)->date.y)));
 
             
-            orderTable->setItem(row, 6, new QTableWidgetItem(QString::number(mainTree->OrderArr[i]->price, 'f', 2)));
+            orderTable->setItem(row, 6, new QTableWidgetItem(QString::number(mainTree->GetCellOrderArr(i)->price, 'f', 2)));
         }
     }
 }
@@ -352,26 +398,23 @@ void MainWindow::addOrder() {
     OrderInputDialog dlg(this);
     if (dlg.exec() == QDialog::Accepted) {
         std::istringstream iss(dlg.getInputString().toStdString());
-        auto result = CheckInputOrder(iss); // Используем вашу функцию валидации
+        auto result = CheckInputOrder(iss); 
 
         if (result.second.empty()) {
-            if (mainTree->AddElemInArr(result.first))
-            {
-                // Проверка: Курьер должен существовать в Хэш-таблице
-                if (hashTable->SearchInHashTable(result.first.passNum).first == nullptr) {
-                    QMessageBox::critical(this, "Ошибка целостности", "Действие отменено: курьера с таким номером пропуска не существует!");
-                    logMessage(QString("Добавление заказа отменено: курьер %1 отсутствует.").arg(result.first.passNum));
-                    return;
-                }
-                updateOrderTable();
-                updateDebugWindow();
-                logMessage(QString("Заказ курьера %1 успешно добавлен вручную.").arg(result.first.passNum));
+
+            // Проверка: Курьер должен существовать в Хэш-таблице
+            if (hashTable->SearchInHashTable(result.first.passNum).first == nullptr) {
+                QMessageBox::critical(this, "Ошибка целостности", "Действие отменено: курьера с таким номером пропуска не существует!");
+                logMessage(QString("Добавление заказа отменено: курьер %1 отсутствует.").arg(result.first.passNum));
+                return;
             }
-            else
-            {
-                QMessageBox::critical(this, "Ошибка", "Введённый заказ уже есть в справочнике");
-                logMessage(QString("Заказ курьера %1 не удалось добавить.").arg(result.first.passNum));
-            }
+
+            mainTree->AddElemInArr(result.first);
+            updateOrderTable();
+            updateDebugWindow();
+            logMessage(QString("Заказ курьера %1 успешно добавлен вручную.").arg(result.first.passNum));
+            
+            
         }
         else {
             QMessageBox::critical(this, "Ошибка", QString::fromStdString(result.second));
@@ -383,7 +426,7 @@ void MainWindow::addOrder() {
 
 // Удалить заказ
 void MainWindow::deleteOrder() {
-    if (!mainTree || mainTree->NumElem == 0) {
+    if (!mainTree || mainTree->GetNumElemOrdersArr() == 0) {
         QMessageBox::warning(this, "Внимание", "Справочник заказов пуст.");
         return;
     }
@@ -427,12 +470,16 @@ void MainWindow::loadOrders() {
     // При повторном вызове данные справочника полностью перезаписываются
     if (mainTree) {
         delete mainTree;
+        delete reportTree;
         mainTree = new MainTree(hashTable);
+        reportTree = new ReportTree(mainTree, hashTable);
+        mainTree->SetReportTree(reportTree);
     }
 
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::critical(this, "Ошибка", "Не удалось открыть выбранный файл.");
+        QMessageBox::critical(this, "Ошибка", "Не удалось открыть файл для чтения.");
+        logMessage("Не удалось загрузить данные о заказах из текстового файла");
         return;
     }
 
@@ -448,7 +495,7 @@ void MainWindow::loadOrders() {
         if (line.trimmed().isEmpty()) { lineNum++; continue; }
 
         std::istringstream iss(line.toStdString());
-        auto result = CheckInputOrder(iss); //
+        auto result = CheckInputOrder(iss); 
 
         if (!result.second.empty()) {
             errorMsg = QString("Некорректный формат данных в строке %1.").arg(lineNum);
@@ -458,7 +505,7 @@ void MainWindow::loadOrders() {
 
         // Проверка: присутствует ли курьер в хеш-таблице
         if (hashTable->SearchInHashTable(result.first.passNum).first == nullptr) {
-            errorMsg = QString("Строка %1: Курьера с пропуском %2 нет в справочнике.").arg(lineNum).arg(result.first.passNum);
+            errorMsg = QString("Строка %1: Курьера с пропуском %2 нет в справочнике \"Курьеры\".").arg(lineNum).arg(result.first.passNum);
             hasError = true;
             break;
         }
@@ -468,18 +515,22 @@ void MainWindow::loadOrders() {
         // Добавляем в AVL-дерево
         mainTree->AddElemInArr(result.first);
         
-        int row = orderTable->rowCount();
-        orderTable->insertRow(row);
-        
-        orderTable->setItem(row, 0, new QTableWidgetItem(QString::number(result.first.passNum).rightJustified(5, '0')));
-        orderTable->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(result.first.adres.street)));
-        orderTable->setItem(row, 2, new QTableWidgetItem(QString::number(result.first.adres.house)));
-        orderTable->setItem(row, 3, new QTableWidgetItem(QString::number(result.first.date.d)));
-        orderTable->setItem(row, 4, new QTableWidgetItem(QString::fromStdString(result.first.date.m)));
-        orderTable->setItem(row, 5, new QTableWidgetItem(QString::number(result.first.date.y)));
-        orderTable->setItem(row, 6, new QTableWidgetItem(QString::number(result.first.price, 'f', 2)));
 
-        lineNum++;
+            int row = orderTable->rowCount();
+            orderTable->insertRow(row);
+
+            orderTable->setItem(row, 0, new QTableWidgetItem(QString::number(result.first.passNum).rightJustified(5, '0')));
+            orderTable->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(result.first.adres.street)));
+            orderTable->setItem(row, 2, new QTableWidgetItem(QString::number(result.first.adres.house)));
+            orderTable->setItem(row, 3, new QTableWidgetItem(QString::number(result.first.date.d)));
+            orderTable->setItem(row, 4, new QTableWidgetItem(QString::fromStdString(result.first.date.m)));
+            orderTable->setItem(row, 5, new QTableWidgetItem(QString::number(result.first.date.y)));
+            orderTable->setItem(row, 6, new QTableWidgetItem(QString::number(result.first.price, 'f', 2)));
+
+
+            lineNum++;
+        
+        
     }
 
     if (hasError) {
@@ -488,20 +539,53 @@ void MainWindow::loadOrders() {
         delete mainTree;
         mainTree = new MainTree(hashTable);
         orderTable->setRowCount(0);
-        logMessage("Загрузка справочника 'Заказы' отменена из-за ошибок в файле.");
+        logMessage("Не удалось загрузить данные о заказах из текстового файла.");
     }
     else {
-        logMessage("Справочник заказов успешно импортирован из файла.");
+        logMessage("Данные о заказах успешно загружены из текстового файла.");
     }
 
     updateDebugWindow();
 }
 
+// Сохранение заказов в текстовый файл
+void MainWindow::saveOrdersToFile() {
+    if (!mainTree || mainTree->GetNumElemOrdersArr() == 0) {
+        QMessageBox::warning(this, "Внимание", "Справочник заказов пуст. Нечего сохранять.");
+        return;
+    }
 
+    QString fileName = QFileDialog::getSaveFileName(this, "Сохранить файл заказов", "", "Text Files (*.txt);;All Files (*)");
+    if (fileName.isEmpty()) return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        logMessage("Не удалось сохранить данные о заказах в текстовый файл.");
+        return;
+    }
+
+    QTextStream out(&file);
+    // Обходим массив указателей AVL-дерева
+    for (int i = 0; i < mainTree->GetNumElemOrdersArr(); i++) {
+        if (mainTree->GetCellOrderArr(i) != nullptr) {
+            out << QString::number(mainTree->GetCellOrderArr(i)->passNum).rightJustified(5, '0') << " "
+                << QString::fromStdString(mainTree->GetCellOrderArr(i)->adres.street) << " "
+                << mainTree->GetCellOrderArr(i)->adres.house << " "
+                << mainTree->GetCellOrderArr(i)->date.d << " "
+                << QString::fromStdString(mainTree->GetCellOrderArr(i)->date.m) << " "
+                << mainTree->GetCellOrderArr(i)->date.y << " "
+                // Ограничиваем стоимость 2 знаками после запятой для красивой структуры
+                << QString::number(mainTree->GetCellOrderArr(i)->price, 'f', 2) << "\n";
+        }
+    }
+
+    file.close();
+    logMessage("Данные о заказах успешно сохранены в текстовый файл: " + fileName);
+}
 
 // Найти заказ
 void MainWindow::searchOrder() {
-    if (!mainTree || mainTree->NumElem == 0) {
+    if (!mainTree || mainTree->GetNumElemOrdersArr() == 0) {
         QMessageBox::warning(this, "Внимание", "Справочник заказов пуст.");
         return;
     }
@@ -515,15 +599,15 @@ void MainWindow::searchOrder() {
     if (isNatural(passStr) && (passStr.length() == 5))
     {
 
-        std::pair <NodeMainTree*, int> Node = mainTree->SearchInTree(stoi(passStr));
+        std::pair <BaseNode*, int> Node = mainTree->SearchInTree(stoi(passStr));
         if (Node.first) {
             NodeList* c = Node.first->IndexList->h;
 
             QString info = QString("Найдены заказы курьера!\nПропуск: %1\n")
-                .arg(Node.first->key);
+                .arg(Node.first->GetKey());
             do {
                 c = c->next;
-                DataOrder* FoundOrder = mainTree->OrderArr[c->Index];
+                DataOrder* FoundOrder = mainTree->GetCellOrderArr(c->Index);
                 info += QString("%1 %2 %3 %4 %5 %6 %7\n").arg(FoundOrder->passNum)
                     .arg(FoundOrder->adres.street).arg(FoundOrder->adres.house)
                     .arg(FoundOrder->date.d).arg(FoundOrder->date.m).arg(FoundOrder->date.y)
@@ -546,6 +630,42 @@ void MainWindow::searchOrder() {
     }
 }
 
+
+
+Filters MainWindow::FilterAssembly(QString& filterDate, QString& filterAddress, QString& filterFio)
+{
+
+    //Собираем структуру Date (из строки вида "13 jun 2026")
+    Date searchDate;
+    QStringList dateParts = filterDate.split(" ", Qt::SkipEmptyParts);
+    if (dateParts.size() == 3) {
+        searchDate.d = dateParts[0].toInt();
+        searchDate.m = dateParts[1].toStdString(); // Переводим QString в std::string
+        searchDate.y = dateParts[2].toInt();
+    }
+
+    //Собираем структуру Adres (из строки вида "Permskaya 12")
+    Adres searchAdres;
+    QStringList addrParts = filterAddress.split(" ", Qt::SkipEmptyParts);
+    if (addrParts.size() >= 2) {
+        // Предполагаем, что последнее слово — это номер дома, а всё перед ним — улица
+        searchAdres.house = addrParts.last().toInt();
+        addrParts.removeLast();
+        searchAdres.street = addrParts.join(" ").toStdString();
+    }
+
+    //Собираем структуру FIO (из строки вида "Иванов Иван Иванович")
+    FIO searchFio;
+    QStringList fioParts = filterFio.split(" ", Qt::SkipEmptyParts);
+    if (fioParts.size() >= 3) {
+        searchFio.f = fioParts[0].toStdString();
+        searchFio.i = fioParts[1].toStdString();
+        searchFio.o = fioParts[2].toStdString();
+    }
+
+    return { searchDate,searchAdres, searchFio };
+}
+
 //Формирование отчёта
 void MainWindow::onGenerateReportClicked() {
     if (!mainTree || !hashTable) {
@@ -553,7 +673,7 @@ void MainWindow::onGenerateReportClicked() {
         return;
     }
 
-    // 1. Открываем модальный диалог запроса параметров (Дата, Адрес, ФИО)
+    // Открываем модальный диалог запроса параметров (Дата, Адрес, ФИО)
     ReportFilterDialog paramDlg(this);
     if (paramDlg.exec() != QDialog::Accepted) {
         return; // Пользователь нажал Отмена
@@ -562,44 +682,17 @@ void MainWindow::onGenerateReportClicked() {
     QString filterDate = paramDlg.getDateString();
     QString filterAddress = paramDlg.getAddressString();
     QString filterFio = paramDlg.getFioString();
-
-    // 2. Инициализируем или перестраиваем дерево отчетов ReportTree
-    ReportTree* reportTree = new ReportTree(mainTree, hashTable);
+    
 
     std::istringstream iss(filterDate.toStdString() + " " + filterAddress.toStdString() + " " + filterFio.toStdString());
     std::pair <Filters, std::string> result = CheckInputFilters(iss);
     if (result.second == "")
     {
-        //Собираем структуру Date (из строки вида "13 jun 2026")
-        Date searchDate;
-        QStringList dateParts = filterDate.split(" ", Qt::SkipEmptyParts);
-        if (dateParts.size() == 3) {
-            searchDate.d = dateParts[0].toInt();
-            searchDate.m = dateParts[1].toStdString(); // Переводим QString в std::string
-            searchDate.y = dateParts[2].toInt();
-        }
+        
+        Filters filters = FilterAssembly(filterDate, filterAddress, filterFio); // сборка структуры Filters
 
-        //Собираем структуру Adres (из строки вида "Permskaya 12")
-        Adres searchAdres;
-        QStringList addrParts = filterAddress.split(" ", Qt::SkipEmptyParts);
-        if (addrParts.size() >= 2) {
-            // Предполагаем, что последнее слово — это номер дома, а всё перед ним — улица
-            searchAdres.house = addrParts.last().toInt();
-            addrParts.removeLast();
-            searchAdres.street = addrParts.join(" ").toStdString();
-        }
-
-        //Собираем структуру FIO (из строки вида "Иванов Иван Иванович")
-        FIO searchFio;
-        QStringList fioParts = filterFio.split(" ", Qt::SkipEmptyParts);
-        if (fioParts.size() >= 3) {
-            searchFio.f = fioParts[0].toStdString();
-            searchFio.i = fioParts[1].toStdString();
-            searchFio.o = fioParts[2].toStdString();
-        }
-
-        reportTree->GenerateReport(searchDate, searchAdres, searchFio);
-        // 3. Создаем и показываем окно отчета как ОТДЕЛЬНОЕ независимое окно
+        reportTree->GenerateReport(filters.date, filters.adres, filters.fio);
+        // Создаем и показываем окно отчета как ОТДЕЛЬНОЕ независимое окно
         
         ReportWindow* reportWin = new ReportWindow(reportTree, this);
         reportWin->setAttribute(Qt::WA_DeleteOnClose);
@@ -640,3 +733,6 @@ void MainWindow::showDebugWindow() {
     debugWindow->raise();          // Выводим на передний план
     debugWindow->activateWindow(); // Фокусируем интерфейс на нём
 }
+
+
+

@@ -10,10 +10,11 @@
 #include "Stracts/Stracts.h"
 #include "ScrHashTable/HashTable.h"
 #include "ScrMainAVLTree/MainTree.h"
-#include "ScrReportAVLTree/ReportTree.h"
 #include"ChekersInputData/CheckerInputData.h"
 
 class DebugWindow;
+class MainTree;
+class HashTable;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -37,6 +38,9 @@ private slots:
     void onGenerateReportClicked();
     void showDebugWindow();
 
+    void saveCouriersToFile();
+    void saveOrdersToFile();
+
 private:
     void setupUI();
     void logMessage(const QString& msg);
@@ -44,6 +48,7 @@ private:
     void updateOrderTable();
     bool initializeStructuresIfNeeded();
     void clearAllData();
+    Filters FilterAssembly(QString& filterDate, QString& filterAddress, QString& filterFio);
 
     // GUI Elements
     QTableWidget* courierTable;

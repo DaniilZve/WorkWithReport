@@ -1,13 +1,4 @@
 ﻿   Qt/MSBuild: 3.5.0.0
    Qt: 6.11.1
-  moc mainwindow.h
-  moc debugwindow.h
-  moc dialogs.h
-  debugwindow.cpp
-  dialogs.cpp
-  main.cpp
   mainwindow.cpp
-  moc_debugwindow.cpp
-  moc_dialogs.cpp
-  moc_mainwindow.cpp
   ReportsApplication.vcxproj -> D:\Курсовой проект\ReportsApplication\x64\Debug\ReportsApplication.exe

@@ -106,7 +106,6 @@
     <ClCompile Include="dialogs.cpp" />
     <ClCompile Include="ScrHashTable\HashTable.cpp" />
     <ClCompile Include="ScrMainAVLTree\MainTree.cpp" />
-    <ClCompile Include="ScrReportAVLTree\ReportTree.cpp" />
     <QtRcc Include="ReportsApplication.qrc" />
     <QtUic Include="ReportsApplication.ui" />
     <QtMoc Include="mainwindow.h" />
@@ -122,7 +121,6 @@
     <ClInclude Include="List\ListTree.h" />
     <ClInclude Include="ScrHashTable\HashTable.h" />
     <ClInclude Include="ScrMainAVLTree\MainTree.h" />
-    <ClInclude Include="ScrReportAVLTree\ReportTree.h" />
     <ClInclude Include="Stracts\Stracts.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -4,7 +4,7 @@
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QDialogButtonBox>
-#include"ScrReportAVLTree/ReportTree.h"
+#include"ScrMainAVLTree/MainTree.h"
 #include <sstream>
 
 
@@ -17,16 +17,16 @@ CourierInputDialog::CourierInputDialog(QWidget* parent) : QDialog(parent) {
     QFormLayout* formLayout = new QFormLayout(this);
 
     passEdit = new QLineEdit(this);
-    passEdit->setPlaceholderText("Например: 12345");
-    formLayout->addRow("Номер пропуска:", passEdit);
+    passEdit->setPlaceholderText("12345");
+    formLayout->addRow("Номер пропуска (5 цифр):", passEdit);
 
     fioEdit = new QLineEdit(this);
-    fioEdit->setPlaceholderText("Ivanov Ivan Ivanovich (на латинице)");
+    fioEdit->setPlaceholderText("Ivanov Ivan Ivanovich");
     formLayout->addRow("ФИО (через пробел):", fioEdit);
 
     tsEdit = new QLineEdit(this);
-    tsEdit->setPlaceholderText("Toyota Camry (на латинице)");
-    formLayout->addRow("Транспорт (Марка Модель):", tsEdit);
+    tsEdit->setPlaceholderText("Toyota Camry");
+    formLayout->addRow("Транспорт (марка и модель):", tsEdit);
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
@@ -55,21 +55,21 @@ OrderInputDialog::OrderInputDialog(QWidget* parent) : QDialog(parent) {
     QFormLayout* formLayout = new QFormLayout(this);
 
     passEdit = new QLineEdit(this);
-    passEdit->setPlaceholderText("Пример: 54321");
+    passEdit->setPlaceholderText("54321");
     formLayout->addRow("Номер пропуска (5 цифр):", passEdit);
 
     adresEdit = new QLineEdit(this);
-    adresEdit->setPlaceholderText("Пример: Permskaya 12");
-    formLayout->addRow("Адрес:", adresEdit);
+    adresEdit->setPlaceholderText("Permskaya 12");
+    formLayout->addRow("Адрес (улица и номер дома):", adresEdit);
 
     
 
     dateEdit = new QLineEdit(this);
-    dateEdit->setPlaceholderText("Пример: 13 jun 2026");
+    dateEdit->setPlaceholderText("13 jun 2026");
     formLayout->addRow("Дата (DD mon YYYY):", dateEdit);
 
     priceEdit = new QLineEdit(this);
-    priceEdit->setPlaceholderText("Пример: 1500.75");
+    priceEdit->setPlaceholderText("1500.75");
     formLayout->addRow("Стоимость заказа:", priceEdit);
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -104,9 +104,9 @@ ReportFilterDialog::ReportFilterDialog(QWidget* parent) : QDialog(parent) {
     houseEdit = new QLineEdit(this); houseEdit->setPlaceholderText("12");
 
     // Блок ФИО
-    surnameEdit = new QLineEdit(this); surnameEdit->setPlaceholderText("Иванов");
-    nameEdit = new QLineEdit(this); nameEdit->setPlaceholderText("Иван");
-    patronymicEdit = new QLineEdit(this); patronymicEdit->setPlaceholderText("Иванович");
+    surnameEdit = new QLineEdit(this); surnameEdit->setPlaceholderText("Ivanov");
+    nameEdit = new QLineEdit(this); nameEdit->setPlaceholderText("Ivan");
+    patronymicEdit = new QLineEdit(this); patronymicEdit->setPlaceholderText("Ivanovich");
 
     formLayout->addRow("День (DD):", dayEdit);
     formLayout->addRow("Месяц (3 буквы):", monthEdit);
@@ -148,7 +148,7 @@ QString ReportFilterDialog::getFioString() const {
 //ОКНО ОТЧЕТА
 ReportWindow::ReportWindow(ReportTree* reportTree, QWidget* parent)
     : QDialog(parent) {
-    setWindowTitle("Сформированный отчёт (Текстовый вид)");
+    setWindowTitle("Сформированный отчёт");
     resize(850, 550);
 
     // Настройки независимого окна
@@ -170,11 +170,12 @@ ReportWindow::ReportWindow(ReportTree* reportTree, QWidget* parent)
     // 3. Собираем весь текст отчета
     QString fileContent = "";
 
-    if (reportTree && reportTree->ReportArr) {
+    if (reportTree) {
             std::stringstream ss;
             reportTree->PrintReport(ss);
             // Преобразуем стандартную строку std::string в QString и добавляем в общий отчет
             fileContent += QString::fromStdString(ss.str());
+
         
     }
 
@@ -185,4 +186,6 @@ ReportWindow::ReportWindow(ReportTree* reportTree, QWidget* parent)
     else {
         reportTextEdit->setPlainText(fileContent);
     }
+    
+    
 }

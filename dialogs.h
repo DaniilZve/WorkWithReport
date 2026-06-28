@@ -10,7 +10,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include "Stracts/Stracts.h"
-#include "ScrReportAVLTree/ReportTree.h"
 
 
 

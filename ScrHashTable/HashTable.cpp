@@ -19,76 +19,109 @@ bool operator == (DataCourier data1, DataCourier data2){
 ostream& operator << (ostream& out, DataCourier* data)
 {
 	std::string NulDay;
-
-	
-
 	return out << data->passNum << " " << data->fio.f << " " << data->fio.i << " "
 		<< NulDay << data->fio.o << " " << data->transp.brand << " " << data->transp.model
 		<< endl;
 
 };
 
-bool HashTable::CheckUnikKey(unsigned int& key1, unsigned int& key2)
+Cell* HashTable::GetCellTable(int& i)
 {
-	return !(key1 == key2);
+	return Table[i];
+}
+DataCourier* HashTable::GetCellCourierArr(int& i)
+{
+	return CourierArr[i];
 }
 
-bool HashTable::isPrimeOptimized(size_t n) {
-	if (n <= 1)
-		return false;
-	if (n == 2)
-		return true;
-	if (n % 2 == 0)
-		return false;
-	for (int i = 3; i <= sqrt(n); i += 2) {
-		if (n % i == 0)
-			return false;
+size_t HashTable::GetMaxSizeArr()
+{
+	return this->MaxSizeArr;
+}
+int HashTable::GetNumElem()
+{
+	return this->NumElem;
+}
+
+int HashTable::HashFunction(unsigned int& key)
+{
+	size_t mask = this->MaxSizeArr - 1;
+	return (key & mask); // то же что и (n + step) % this->MaxSizeArr;
+}
+
+int HashTable::HashFunction2(unsigned int& n, int& j)
+{
+	size_t mask = this->MaxSizeArr - 1;
+	size_t step = (j * j + j) >> 1; // то же что и  (j*j + j)/2 = (0.5*j*j + 0.5*j)
+	return ((n + step)  &  mask); // то же что и (n + step) % this->MaxSizeArr;
+}
+
+
+
+std::pair<int, int> HashTable::ResolveCollisions(unsigned int& key, bool findForInsert)
+{
+	int ind = HashFunction(key); // Стартовый хэш
+	int NewInd = ind;
+	int j = 1;
+	int SearchSteps = 1; 
+	int firstDeletedIndex = NO_CELL;
+
+
+	while (j < this->MaxSizeArr && this->Table[NewInd]->state != EMPTY)
+	{
+		if (this->Table[NewInd]->state == OCCUPIED)
+		{
+			// Если ключ совпал, мы нашли элемент (для поиска/удаления) 
+			// либо обнаружили дубликат (при добавлении)
+			if (this->Table[NewInd]->key == key)
+			{
+				return { NewInd, SearchSteps };
+			}
+		}
+		else if (this->Table[NewInd]->state == DELETED)
+		{
+	
+			if (findForInsert && firstDeletedIndex == NO_CELL)
+			{
+				firstDeletedIndex = NewInd;
+			}
+		}
+
+		NewInd = HashFunction2(key, j);
+		j += 1;
+		SearchSteps += 1;
 	}
-	return true;
+
+	// Если мы искали место для вставки и по пути встретили DELETED, возвращаем её индекс
+	if (findForInsert && firstDeletedIndex != NO_CELL)
+	{
+		return { firstDeletedIndex, SearchSteps };
+	}
+
+	// Если вышли на EMPTY — возвращаем её индекс (для вставки). 
+	// Если таблица полностью заполнена (j >= MaxSizeArr) и EMPTY не найден — возвращаем NO_CELL.
+	int finalIndex = (this->Table[NewInd]->state == EMPTY) ? NewInd : NO_CELL;
+	return { finalIndex, SearchSteps };
 }
-
-
-
-int HashTable::HashFunction(const unsigned int& key)
-{
-	return (key % MaxSizeArr);
-}
-
-int HashTable::HashFunction2(int& n, int& j)
-{
-	return ((n + (int)pow(j, 2)) % this->MaxSizeArr);
-}
-
-int HashTable::ResolveCollis(int OriginalInd, int j)
-{
-	OriginalInd = HashFunction2(OriginalInd, j);
-	return OriginalInd;
-}
-
 
 void HashTable::SetOrderTree(MainTree* orderTree)
 {
 	this->OrderTree = orderTree;
 }
-HashTable::HashTable(size_t Size)
+HashTable::HashTable(size_t& Size)
 {
-	size_t NewSize = Size * 2;
-	while (!isPrimeOptimized(NewSize))
-	{
-		NewSize += 1;
-	}
+	
 	this->NumElem = 0;
-	this->SizeArr = 0;
-	this->MaxSizeArr = NewSize;
-	this->Table = new Cell* [NewSize];
-	for (size_t i = 0; i < NewSize; i++)
+	this->MaxSizeArr = Size;
+	this->Table = new Cell* [Size];
+	for (size_t i = 0; i < Size; i++)
 	{
 		this->Table[i] = new Cell;
 		this->Table[i]->state = EMPTY;
 	}
 
-	this->CourierArr = new  DataCourier * [NewSize];
-	for (int i = 0; i < NewSize; i++) {
+	this->CourierArr = new  DataCourier * [Size];
+	for (int i = 0; i < Size; i++) {
 
 		this->CourierArr[i] = nullptr;
 	}
@@ -109,178 +142,88 @@ HashTable::~HashTable()
 
 
 
-bool HashTable::AddElemInArr(DataCourier& data)
+std:: pair <bool,int> HashTable::AddInTable(DataCourier& data)
 {
 	
-		if (AddInTable(data))
-		{
-			CourierArr[SizeArr] = new DataCourier;
-			CourierArr[SizeArr]->fio = data.fio;
-			CourierArr[SizeArr]->passNum = data.passNum;
-			CourierArr[SizeArr]->transp = data.transp;
-			SizeArr += 1;
-			return true;
-		}
-		else return false;
+	auto [index, steps] = ResolveCollisions(data.passNum, true);
+
+	if (index == NO_CELL) return { false, NO_CELL }; //коэффициент заполненности слишком высок
+
+	// Если ячейка уже занята таким же ключом (попытка вставить дубликат)
+	if (this->Table[index]->state == OCCUPIED && this->Table[index]->key == data.passNum)
+	{
+		return { false, index };
+	}
+
+	// Записываем данные в найденную позицию (EMPTY или DELETED)
+	this->Table[index]->key = data.passNum;
+	this->Table[index]->index = NumElem;
+	this->Table[index]->state = OCCUPIED;
+	this->NumElem += 1;
+	//Записываем данные в массив
+	CourierArr[NumElem - 1] = new DataCourier;
+	CourierArr[NumElem - 1]->fio = data.fio;
+	CourierArr[NumElem - 1]->passNum = data.passNum;
+	CourierArr[NumElem - 1]->transp = data.transp;
+	return { true, index };
 }
 
-bool HashTable::AddInTable(DataCourier& data)
-{
 
-	int ind = HashFunction(data.passNum);
-	int j = 1;
-	int DelCell = NO_CELL;
-	while (CheckUnikKey(data.passNum, this->Table[ind]->key) && (this->Table[ind]->state != EMPTY) && (j < this->MaxSizeArr))
-	{
-		ind = ResolveCollis(ind, j);
-		j += 1;
-		if ((this->Table[ind]->state == DELETED) && (DelCell == NO_CELL)) DelCell = ind;
-	}
-	if (this->Table[ind]->state == EMPTY) {
-		this->Table[ind]->key = data.passNum;
-		this->Table[ind]->index = SizeArr;
-		this->Table[ind]->state = OCCUPIED;
-		this->NumElem += 1;
-		return true;
-	}
-	else if (DelCell != NO_CELL) {
-		this->Table[DelCell]->key = data.passNum;
-		this->Table[DelCell]->index = SizeArr;
-		this->Table[DelCell]->state = OCCUPIED;
-		this->NumElem += 1;
-		return true;
-	}
-	else {
-		return false;
-	}
+
+
+std::pair<Cell*, int> HashTable::SearchInHashTable(unsigned int& key)
+{
 	
-}
+	auto [index, steps] = ResolveCollisions(key, false);
 
-
-
-void HashTable::FillArr(std::ifstream& in)
-{
-	string line;
-
-	while (std::getline(in, line))
+	if (index != NO_CELL && this->Table[index]->state == OCCUPIED)
 	{
-		if (!line.empty())
-		{
-			std::istringstream iss(line);
-
-			pair <DataCourier, std::string> elem = CheckInputCourier(iss);
-
-			if (elem.second.empty())
-			{
-				AddElemInArr(elem.first);
-
-			}
-			// иначе просто ничего не делаем — строка пропущена
-		}
-	}
-}
-std::pair <Cell*, int> HashTable::SearchInHashTable(const unsigned int& key)
-{
-	unsigned int SearchKey = key;
-
-	int SearchSteps = 1;
-	int ind = HashFunction(key);
-	int j = 1;
-	while (j < this->MaxSizeArr)
-	{
-		if (this->Table[ind]->state == OCCUPIED)
-		{
-			if ((this->Table[ind]->key == SearchKey))
-			{
-				return { this->Table[ind],  SearchSteps};
-			}
-		}
-
-		ind = ResolveCollis(ind, j);
-		SearchSteps += 1;
-		j += 1;
+		return { this->Table[index], steps }; // Успешный поиск: возвращаем ячейку и шаги
 	}
 
-	cout << "Elements not founded"<< endl;
-	return { nullptr,  SearchSteps };
-
-}
-
-bool HashTable::DelElemInArr(DataCourier& data)
-{
-	if (OrderTree->SearchInTree(data.passNum).first == nullptr)
-	{
-		if (DelInTable(data) != true)
-		{
-			return false;
-		}
-
-		return true;
-	}
+	return { nullptr, steps }; // Неуспешный поиск: возвращаем nullptr и сколько шагов проверили
 }
 
 bool HashTable::DelInTable(DataCourier& data)
 {
-	int count = 0;
-	int ind = HashFunction(data.passNum);
-	int j = 1;
-	Cell* DelElem = nullptr;
+	auto [index, steps] = ResolveCollisions(data.passNum, false);
 
-	while ((j < this->MaxSizeArr) && (DelElem == nullptr))
+	// Проверяем, что элемент найден, он занят и данные полностью совпадают
+	if (index == NO_CELL || this->Table[index]->state != OCCUPIED)
 	{
-		if (this->Table[ind]->state == OCCUPIED)
-		{
-			if ((this->Table[ind]->key == data.passNum) && (*CourierArr[this->Table[ind]->index] == data))
-			{
-				DelElem = this->Table[ind];
-			}
-		}
-
-		ind = ResolveCollis(ind,j);
-		count += 1;
-		j += 1;
-	}
-
-	if (j >= this->MaxSizeArr)
-	{
-		cout << "Elements not founded" << endl;
 		return false;
-		
 	}
-	else if (DelElem!= nullptr)
+
+	if (!(*CourierArr[this->Table[index]->index] == data))
 	{
-		DelElem->state = DELETED;
-		delete CourierArr[DelElem->index];
-		CourierArr[DelElem->index] = nullptr;
-		NumElem -= 1;
-		cout << "Elements deleted" << endl;
+		return false; // Ключ совпал, но сами данные курьера другие
 	}
-	return true;
+
 	
-}
+	Cell* DelElem = this->Table[index];
+	int LastElemInd = NumElem - 1;
 
-void HashTable::PrintTable(std::ostream& out)
-{
-	for (size_t i = 0; i < this->MaxSizeArr; i++)
+	//Изменяем статус ячейки на удалённый
+	DelElem->state = DELETED;
+
+	//Удаляем из массива и переопределяем индекс последнего элемента
+	delete CourierArr[DelElem->index];
+	if (DelElem->index != LastElemInd)
 	{
-		if (this->Table[i]->state == OCCUPIED)
+		CourierArr[DelElem->index] = CourierArr[LastElemInd];
+
+		auto [updatedIndex, searchSteps] = ResolveCollisions(CourierArr[LastElemInd]->passNum, false);
+		if (updatedIndex != NO_CELL)
 		{
-			out << i << ": " << "reserved -> ";
-			out << CourierArr[ this->Table[i]->index];
+			this->Table[updatedIndex]->index = DelElem->index;
 		}
-		else if(this->Table[i]->state == EMPTY) out << i << ": " << "Empty " << endl;
-		else if (this->Table[i]->state == DELETED) out << i << ": " << "Delited " << endl;
 	}
+
+
+	CourierArr[LastElemInd] = nullptr;
+	NumElem -= 1;
+
+	return true;
 }
 
-void HashTable::PrintCourierArr(std::ostream& out)
-{
-	for (int i = 0; i < SizeArr; i++)
-	{
-		if (CourierArr[i] != nullptr)
-			out << CourierArr[i];
-		else
-			out << "nullptr" << endl;
-			
-	}
-}
+
