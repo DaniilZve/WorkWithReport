@@ -135,11 +135,11 @@ std::pair <DataOrder, std::string> CheckInputOrder(std::istream& in)
 {
     DataOrder elem;
 
-    std::string passStr, houseStr, priceStr, dayStr, yearStr, extra;
+    std::string passStr, houseStr, streetStr, priceStr, dayStr, monStr,  yearStr, extra;
 
     // чтение
-    if (!(in >> passStr >> elem.adres.street >> houseStr
-        >> dayStr >> elem.date.m >> yearStr
+    if (!(in >> passStr >> streetStr >> houseStr
+        >> dayStr >> monStr >> yearStr
         >> priceStr))
     {
         return { elem, "Ошибка считывания. Возможно не хватает каких-то данных" };
@@ -158,15 +158,15 @@ std::pair <DataOrder, std::string> CheckInputOrder(std::istream& in)
     elem.passNum = std::stoi(passStr);
     if (elem.passNum == 0)
     {
-        return { elem, "Ошибка в записи номера пропуска. Номер пропуска не может быть равен 0" };
+        return { elem, "Ошибка в записи номера пропуска. Проверьте, чтобы длинна была равна 5, а сам номер был натуральным числом" };
     }
 
     // Адрес
-    if (!RegisterCheck(elem.adres.street))
+    if (!RegisterCheck(streetStr) || streetStr.length() < 2)
     {
-        return { elem,  "Ошибка в записи адреса(улица).Проверьте чтобы улица была записана латинскими символами с заглавной буквы" };
+        return { elem,  "Ошибка в записи адреса(улица).Проверьте чтобы улица была записана буквами английского алфавита, первая была заглавной, а остальные строчными." };
     }
-
+    elem.adres.street = streetStr;
     if (!isNatural(houseStr))
     {
         return { elem, "Ошибка в записи номер дома. Проверьте, чтобы номер был натуральным числом " };
@@ -174,14 +174,10 @@ std::pair <DataOrder, std::string> CheckInputOrder(std::istream& in)
     elem.adres.house = std::stoi(houseStr);
     if (elem.adres.house == 0)
     {
-        return { elem, "Ошибка в записи номера дома. Номер дома не может быть равен 0" };
+        return { elem, "Ошибка в записи номер дома. Проверьте, чтобы номер был натуральным числом " };
     }
 
-    // Дата
-    if (!isNatural(dayStr) || !isNatural(yearStr) || yearStr.length() != 4)
-    {
-        return { elem, "Ошибка в записи даты. Проверьте, чтобы дата была в формате \"DD mon YYYY\"" };
-    }
+   
     elem.date.d = std::stoi(dayStr);
     elem.date.y = std::stoi(yearStr);
     if ((elem.date.d < 1) || (elem.date.d > 31))
@@ -193,14 +189,15 @@ std::pair <DataOrder, std::string> CheckInputOrder(std::istream& in)
         return { elem, "Ошибка в записи даты. Год должен находиться в диапазоне от 1990 до 2026" };
     }
    
-    int NewDate = ConvMonToInt(elem.date.m);
+    int NewDate = ConvMonToInt(monStr);
     if (NewDate == -1)
     {
-        return { elem, "Ошибка в записи даты. Проверьте месяц." };
+        return { elem, "Ошибка в записи даты. Проверьте, чтобы месяц был в формате \"mon\"." };
     }
     if (!isValidDate(elem.date.d, NewDate, elem.date.y)) {
         return { elem, "Ошибка в записи даты. Указан некорректный день для данного месяца (возможно, ошибка високосного года)." };
     }
+    elem.date.m = monStr;
 
     // Цена (целая или вещественная, но положительная) ---
     if (!isPositiveNumber(priceStr))
@@ -210,7 +207,7 @@ std::pair <DataOrder, std::string> CheckInputOrder(std::istream& in)
     elem.price = std::stod(priceStr);
     if (elem.price <= 0.00001)
     {
-        return { elem, "Ошибка в записи цены. Цена не может быть равна 0"};
+        return { elem, "Ошибка в записи цены Проверьте, чтобы цена была положительным вещественным числом" };
     }
 
     return { elem, ""};
@@ -241,27 +238,27 @@ std::pair <DataCourier, std::string> CheckInputCourier(std::istream& in) {
     }
     elem.passNum = std::stoi(passStr);
     if (elem.passNum == 0) {
-        return { elem, "Ошибка в записи номера пропуска.Номер пропуска не может быть равен 0"};
+        return{ elem, "Ошибка в записи номера пропуска. Проверьте, чтобы длинна была равна 5, а сам номер был натуральным числом" };
     }
 
     // ФИО
-    if (!RegisterCheck(elem.fio.f))
+    if (!RegisterCheck(elem.fio.f) || elem.fio.f.length() < 2)
     {
-        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы фамилия была записана латинскими символами с заглавной буквы"};
+        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы фамилия была записана буквами английского алфавита, первая была заглавной, а остальные строчными."};
     }
-    if (!RegisterCheck(elem.fio.i))
+    if (!RegisterCheck(elem.fio.i) || elem.fio.i.length() < 2)
     {
-        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы имя было записано латинскими символами с заглавной буквы" };
+        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы имя было записано буквами английского алфавита, первая была заглавной, а остальные строчными." };
     }
-    if (!RegisterCheck(elem.fio.o))
+    if (!RegisterCheck(elem.fio.o) || elem.fio.o.length() < 2)
     {
-        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы отчество было записано латинскими символами с заглавной буквы" };
+        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы отчество было записано буквами английского алфавита, первая была заглавной, а остальные строчными." };
     }
 
     //Марка
-    if (!RegisterCheck(elem.transp.brand))
+    if (!RegisterCheck(elem.transp.brand) || elem.transp.brand.length() < 2)
     {
-        return { elem, "Ошибка в записи марки машины. Проверьте, чтобы марка была записана латинскими символами с заглавной буквы"};
+        return { elem, "Ошибка в записи марки машины. Проверьте, чтобы марка была записана буквами английского алфавита, первая была заглавной, а остальные строчными."};
     }
     //Модель
     // не русские
@@ -297,8 +294,8 @@ std::pair <Filters, std::string> CheckInputFilters(std::istream& in)
     // чтение
     if (!(in >> dayStr >> monthStr >> yearStr
         >> streetStr >> houseStr
-        >> fStr >> iStr >> oStr )){
-        return { elem, "Ошибка считывания. Возможно не хватает каких-то данных"};
+        >> fStr >> iStr >> oStr)) {
+        return { elem, "Ошибка считывания. Возможно не хватает каких-то данных" };
     }
 
     in >> extra;
@@ -307,20 +304,16 @@ std::pair <Filters, std::string> CheckInputFilters(std::istream& in)
         return { elem, "Были введены лишние данные" };
     }
 
-    // Дата
-    if (!isNatural(dayStr) || !isNatural(yearStr) || yearStr.length() != 4)
-    {
-        return { elem, "Ошибка в записи даты. Проверьте, чтобы дата была в формате \"DD mon YYYY\" " };
-    }
+    
     elem.date.d = std::stoi(dayStr);
     elem.date.y = std::stoi(yearStr);
-    if ((elem.date.d < 1) || (elem.date.d > 31))
+    if (!isNatural(dayStr) || (elem.date.d < 1) || (elem.date.d > 31))
     {
-        return { elem, "Ошибка в записи даты. День должен находиться в диапазоне от 1 до 31"};
+        return { elem, "Ошибка в записи даты. День должен находиться в диапазоне от 1 до 31" };
     }
-    if ((elem.date.y < 1990) || (elem.date.y > 2026))
+    if (!isNatural(yearStr) || (elem.date.y < 1990) || (elem.date.y > 2026))
     {
-        return { elem, "Ошибка в записи даты. Год должен находиться в диапазоне от 1990 до 2026"};
+        return { elem, "Ошибка в записи даты. Год должен находиться в диапазоне от 1990 до 2026" };
     }
     int NewDate = ConvMonToInt(monthStr);
     if (NewDate == -1)
@@ -333,9 +326,9 @@ std::pair <Filters, std::string> CheckInputFilters(std::istream& in)
     elem.date.m = monthStr;
 
     // Адрес
-    if (!RegisterCheck(streetStr))
+    if (!RegisterCheck(streetStr) || streetStr.length() < 2)
     {
-        return { elem, "Ошибка в записи адреса(улица).Проверьте чтобы улица была записана латинскими символами с заглавной буквы" };
+        return { elem, "Ошибка в записи адреса (улица).Проверьте, чтобы улица была записана буквами английского алфавита, первая была заглавной, а остальные строчными." };
     }
     elem.adres.street = streetStr;
 
@@ -346,23 +339,23 @@ std::pair <Filters, std::string> CheckInputFilters(std::istream& in)
     elem.adres.house = std::stoi(houseStr);
     if (elem.adres.house == 0)
     {
-        return { elem, "Ошибка в записи номера дома. Номер дома не может быть равен 0" };
+        return { elem, "Ошибка в записи номер дома. Проверьте, чтобы номер был натуральным числом " };
     }
 
     // ФИО
-    if (!RegisterCheck(fStr))
+    if (!RegisterCheck(fStr) || fStr.length() < 2)
     {
-        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы фамилия была записана латинскими символами с заглавной буквы" };
+        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы фамилия была записана буквами английского алфавита, первая была заглавной, а остальные строчными." };
     }
     elem.fio.f = fStr;
-    if (!RegisterCheck(iStr))
+    if (!RegisterCheck(iStr) || iStr.length() < 2)
     {
-        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы имя было записано латинскими символами с заглавной буквы"  };
+        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы имя было записано буквами английского алфавита, первая была заглавной, а остальные строчными."  };
     }
     elem.fio.i = iStr;
-    if (!RegisterCheck(oStr))
+    if (!RegisterCheck(oStr) || oStr.length() < 2)
     {
-        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы отчество было записано латинскими символами с заглавной буквы" };
+        return { elem, "Ошибка в записи ФИО. Проверьте, чтобы отчество было записано буквами английского алфавита, первая была заглавной, а остальные строчными." };
     }
     elem.fio.o = oStr;
     return { elem, ""};

@@ -1,7 +1,7 @@
 #include "ListTree.h"
 
-NodeList::NodeList(int& data) {
-	this->Index = data;
+NodeList::NodeList(int& ind) {
+	this->Index = ind;
 	this->next = nullptr; 
 }
 
@@ -28,8 +28,8 @@ List::~List() {
 }
 
 // Вставка с сохранением порядка ПО УБЫВАНИЮ
-void List::AddElemInList(int data) {
-	NodeList* NewNode = new NodeList(data);
+void List::AddElemInList(int& ind) {
+	NodeList* NewNode = new NodeList(ind);
 
 	// Список пуст
 	if (h == nullptr) {
@@ -41,7 +41,7 @@ void List::AddElemInList(int data) {
 	else
 	{
 		// Новый элемент больше головы (вставка в самое начало)
-		if (data > h->Index) {
+		if (ind > h->Index) {
 			NewNode->next = h;
 			h = NewNode;
 			t->next = h; // Поддерживаем кольцо
@@ -53,7 +53,7 @@ void List::AddElemInList(int data) {
 			// Вставка в середину или в конец
 			NodeList* prev = h;
 			NodeList* curr = h->next;
-			while (curr != h && curr->Index > data) {
+			while (curr != h && curr->Index > ind) {
 				prev = curr;
 				curr = curr->next;
 			}
@@ -72,7 +72,7 @@ void List::AddElemInList(int data) {
 	
 }
 
-void List::DelElemInList(int data) {
+void List::DelElemInList(int& ind) {
 	if (h != nullptr)
 	{
 
@@ -80,13 +80,13 @@ void List::DelElemInList(int data) {
 		NodeList* q = t;
 
 		// Поиск элемента
-		while (p->Index != data && p->next != h) {
+		while (p->Index != ind && p->next != h) {
 			q = p;
 			p = p->next;
 		}
 
 		// Если элемент найден
-		if (p->Index == data)
+		if (p->Index == ind)
 		{
 			// Если элемент всего один в списке
 			if (h == t) {
@@ -112,13 +112,13 @@ void List::DelElemInList(int data) {
 	}
 }
 
-bool List::SearchInList(int data)
+bool List::SearchInList(int& ind)
 {
 	NodeList* p = this->h;
-	while (p != h && p->Index != data);
+	while (p != h && p->Index != ind);
 	{
 		p = p->next;
 	} 
-	if (p->Index == data) return true;
+	if (p->Index == ind) return true;
 	else return false;
 }

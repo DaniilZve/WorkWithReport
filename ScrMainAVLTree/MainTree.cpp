@@ -263,36 +263,28 @@ BaseNode* BaseAVLTree::Rebalanse(BaseNode* node) {
 
 bool MainTree::AddElemInArr(DataOrder& elem)
 {
-    
-        if (AddElem(elem) == true)
-        {
-
-            if (NumElemOrdersArr >= CapacityOrdersArr)
-                IncreaseArr();
-
-            OrderArr[NumElemOrdersArr - 1] = new DataOrder;
-            OrderArr[NumElemOrdersArr - 1]->adres = elem.adres;
-            OrderArr[NumElemOrdersArr - 1]->date = elem.date;
-            OrderArr[NumElemOrdersArr - 1]->price = elem.price;
-            OrderArr[NumElemOrdersArr - 1]->passNum = elem.passNum;
-            reportTree->AddInTreeElem(reportTree->root, elem);
-            return true;
-
-        }
-        else return false;
-
-    
-}
-
-bool MainTree::AddElem(DataOrder& data)
-{
     int SizeOld = this->NumElemOrdersArr;
-    AddInTreeElem(this->root, data);
+    AddInTreeElem(this->root, elem);
     int SizeNew = this->NumElemOrdersArr;
-    if (SizeOld != SizeNew) return true;
-    else return false;
+    if (SizeOld!= SizeNew)
+    {
 
+        if (NumElemOrdersArr >= CapacityOrdersArr)
+            IncreaseArr();
+
+        OrderArr[NumElemOrdersArr - 1] = new DataOrder;
+        OrderArr[NumElemOrdersArr - 1]->adres = elem.adres;
+        OrderArr[NumElemOrdersArr - 1]->date = elem.date;
+        OrderArr[NumElemOrdersArr - 1]->price = elem.price;
+        OrderArr[NumElemOrdersArr - 1]->passNum = elem.passNum;
+        reportTree->AddInTreeElem(reportTree->root, elem);
+        return true;
+
+    }
+    else return false;    
 }
+
+
 
 BaseNode* MainTree::AddInTreeElem(BaseNode* p, DataOrder& data) {
    
@@ -313,19 +305,16 @@ BaseNode* MainTree::AddInTreeElem(BaseNode* p, DataOrder& data) {
         p->right = AddInTreeElem(p->right, data);
         FixedHight(p);
     }
-    else{
-        
+    else{        
             p->IndexList->AddElemInList(NumElemOrdersArr);
             NumElemOrdersArr += 1;
-        
-        
     }
     return Rebalanse(p);
 }
 
 std::pair<BaseNode*, int> MainTree::SearchInTree( const unsigned int & key) {
 
-    int SearchSteps = 0;
+    int SearchSteps = 1;
     BaseNode* p = root;
     while (p != nullptr) {
 
@@ -363,7 +352,10 @@ BaseNode* BaseAVLTree::RemoveMax(BaseNode* p)
 
 bool  MainTree::DelElemInArr(DataOrder& elem)
 {
-    if (DelElem(elem) == true)
+    int SizeOld = this->NumElemOrdersArr;
+    DelInTreeElem(this->root, elem);
+    int SizeNew = this->NumElemOrdersArr;
+    if (SizeOld != SizeNew)
     {
         if (NumElemOrdersArr == (CapacityOrdersArr/2))
             DecreaseArr();
@@ -375,14 +367,7 @@ bool  MainTree::DelElemInArr(DataOrder& elem)
 }
 
 
-bool MainTree::DelElem(DataOrder& data)
-{
-    int SizeOld = this->NumElemOrdersArr;
-    DelInTreeElem(this->root, data);
-    int SizeNew = this->NumElemOrdersArr;
-    if (SizeOld != SizeNew) return true;
-    else return false;
-}
+
 
 BaseNode* MainTree::DelInTreeElem(BaseNode* p, DataOrder& data) {
 
@@ -665,7 +650,7 @@ BaseNode* ReportTree::DelInTreeElem(BaseNode* p, DataOrder& data) {
 
 std::pair<BaseNode*, int> ReportTree::SearchInTree(const unsigned int& key) {
 
-    int SearchSteps = 0;
+    int SearchSteps = 1;
     BaseNode* p = root;
     while (p != nullptr) {
         unsigned int DATEData = key;

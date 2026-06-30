@@ -9,9 +9,9 @@ public:
 	NodeList* t;
 	List();
 	~List();
-	void AddElemInList( int data);
-	void DelElemInList( int data);
-	bool SearchInList( int data);
+	void AddElemInList( int& ind);
+	void DelElemInList( int& ind);
+	bool SearchInList( int& ind);
 	
 };
 
@@ -21,7 +21,7 @@ class NodeList
 public:
 	NodeList* next;
 	int Index;
-	NodeList(int& data);
+	NodeList(int& ind);
 	~NodeList();
 };
 

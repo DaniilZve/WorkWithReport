@@ -157,17 +157,17 @@ ReportWindow::ReportWindow(ReportTree* reportTree, QWidget* parent)
 
     QVBoxLayout* layout = new QVBoxLayout(this);
 
-    // 1. Создаем виджет многострочного текста
+    //Создаем виджет многострочного текста
     reportTextEdit = new QPlainTextEdit(this);
     reportTextEdit->setReadOnly(true); // Запрещаем пользователю редактировать текст
 
-    // 2. Устанавливаем шрифт "Courier New" (моноширинный), чтобы текст выглядел ровно, как в .txt файле
+    //Устанавливаем шрифт "Courier New" (моноширинный), чтобы текст выглядел ровно, как в .txt файле
     QFont textFont("Courier New", 10);
     reportTextEdit->setFont(textFont);
 
     layout->addWidget(reportTextEdit);
 
-    // 3. Собираем весь текст отчета
+    //Собираем весь текст отчета
     QString fileContent = "";
 
     if (reportTree) {
@@ -179,7 +179,7 @@ ReportWindow::ReportWindow(ReportTree* reportTree, QWidget* parent)
         
     }
 
-    // 4. Записываем собранный текст в поле
+    //Записываем собранный текст в поле
     if (fileContent.isEmpty()) {
         reportTextEdit->setPlainText("Нет данных, удовлетворяющих заданным фильтрам (Дата, Адрес, ФИО).");
     }

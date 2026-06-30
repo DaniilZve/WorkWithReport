@@ -29,7 +29,7 @@ public:
 	unsigned int hight;
 	BaseNode* left;
 	BaseNode* right;
-	List* IndexList; // Общий для обоих деревьев список индексов заказов
+	List* IndexList; 
 	virtual void SetKey(const unsigned int& newKey) = 0;
 	virtual unsigned int GetKey() = 0;
 	BaseNode();
@@ -97,8 +97,6 @@ private:
 	HashTable* CourierHashTable;
 	BaseAVLTree* reportTree;
 	DataOrder** OrderArr;
-	bool AddElem(DataOrder& data);
-	bool DelElem(DataOrder& data);
 	BaseNode* AddInTreeElem(BaseNode* p, DataOrder& data) override;
 	BaseNode* DelInTreeElem(BaseNode* p, DataOrder& data) override;
 	void IncreaseArr();

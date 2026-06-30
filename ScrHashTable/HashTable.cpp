@@ -60,8 +60,8 @@ int HashTable::HashFunction2(unsigned int& n, int& j)
 
 std::pair<int, int> HashTable::ResolveCollisions(unsigned int& key, bool findForInsert)
 {
-	int ind = HashFunction(key); // Стартовый хэш
-	int NewInd = ind;
+	unsigned int FirstInd = HashFunction(key); // Стартовый хэш
+	int NewInd = FirstInd;
 	int j = 1;
 	int SearchSteps = 1; 
 	int firstDeletedIndex = NO_CELL;
@@ -87,12 +87,12 @@ std::pair<int, int> HashTable::ResolveCollisions(unsigned int& key, bool findFor
 			}
 		}
 
-		NewInd = HashFunction2(key, j);
+		NewInd = HashFunction2(FirstInd, j);
 		j += 1;
 		SearchSteps += 1;
 	}
 
-	// Если мы искали место для вставки и по пути встретили DELETED, возвращаем её индекс
+	// Если искали место для вставки и по пути встретили DELETED, возвращаем её индекс
 	if (findForInsert && firstDeletedIndex != NO_CELL)
 	{
 		return { firstDeletedIndex, SearchSteps };

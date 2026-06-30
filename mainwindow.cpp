@@ -25,7 +25,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::setupUI() {
-    setWindowTitle("Справочная система: Курьеры и Заказы");
+    setWindowTitle("Справочная система: Доставка еды");
     resize(1200, 800);
 
     // Основной виджет и сплиттер
@@ -201,7 +201,7 @@ void MainWindow::deleteCourier() {
             }
             else
             {
-                QMessageBox::warning(this, "Ошибка", "Курьер не найден.");;
+                QMessageBox::critical(this, "Ошибка", "Курьер не найден.");;
                 logMessage(QString("Курьера с пропуском %1 не удалось удалить.").arg(result.first.passNum));
             }
         }
@@ -219,7 +219,11 @@ void MainWindow::loadCouriers() {
     if (fileName.isEmpty()) return;
 
     // Перезапись при повторной загрузке
-    if (hashTable) clearAllData();
+    if (hashTable)
+    {
+        clearAllData();
+        updateDebugWindow();
+    }
     if (!initializeStructuresIfNeeded()) return;
 
     QFile file(fileName);
@@ -232,9 +236,16 @@ void MainWindow::loadCouriers() {
     int lineNum = 1;
     bool hasError = false;
 
+
     while (!in.atEnd()) {
         QString line = in.readLine();
-        if (line.trimmed().isEmpty()) { lineNum++; continue; }
+        if (line.trimmed().isEmpty()) 
+        { 
+            QMessageBox::critical(this, "Ошибка загрузки", QString("Пустая строка %1. Загрузка остановлена.").arg(lineNum));
+            hasError = true;
+            break;
+        
+        }
 
         std::istringstream iss(line.toStdString());
         auto result = CheckInputCourier(iss);
@@ -474,6 +485,7 @@ void MainWindow::loadOrders() {
         mainTree = new MainTree(hashTable);
         reportTree = new ReportTree(mainTree, hashTable);
         mainTree->SetReportTree(reportTree);
+        updateDebugWindow();
     }
 
     QFile file(fileName);
@@ -492,7 +504,13 @@ void MainWindow::loadOrders() {
 
     while (!in.atEnd()) {
         QString line = in.readLine();
-        if (line.trimmed().isEmpty()) { lineNum++; continue; }
+        if (line.trimmed().isEmpty())
+        {
+            errorMsg =  QString("Пустая строка %1.").arg(lineNum);
+            hasError = true;
+            break;
+
+        }
 
         std::istringstream iss(line.toStdString());
         auto result = CheckInputOrder(iss); 
@@ -535,7 +553,7 @@ void MainWindow::loadOrders() {
 
     if (hasError) {
         // Если данные некорректны, загрузка полностью останавливается, действие отменяется
-        QMessageBox::critical(this, "Ошибка загрузки файлов", errorMsg + "\nЗагрузка прервана. Данные аннулированы.");
+        QMessageBox::critical(this, "Ошибка загрузки", errorMsg + "\nЗагрузка прервана. Данные аннулированы.");
         delete mainTree;
         mainTree = new MainTree(hashTable);
         orderTable->setRowCount(0);

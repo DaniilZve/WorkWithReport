@@ -1,20 +1,9 @@
 ﻿   Qt/MSBuild: 3.5.0.0
    Qt: 6.11.1
-  CheckerInputData.cpp
-  ListTree.cpp
-  HashTable.cpp
-  MainTree.cpp
-  debugwindow.cpp
-  dialogs.cpp
-  main.cpp
   mainwindow.cpp
-D:\Курсовой проект\ReportsApplication\ReportsApplication\ScrHashTable\HashTable.cpp(56,22): warning C4267: return: преобразование из "size_t" в "int"; возможна потеря данных
-  moc_debugwindow.cpp
-  moc_dialogs.cpp
-  moc_mainwindow.cpp
   Создание кода
-  129 of 1122 functions (11.5%) were compiled, the rest were copied from previous compilation.
-    16 functions were new in current compilation
-    23 functions had inline decision re-evaluated but remain unchanged
+  2 of 1109 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    38 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   ReportsApplication.vcxproj -> D:\Курсовой проект\ReportsApplication\x64\Release\ReportsApplication.exe
